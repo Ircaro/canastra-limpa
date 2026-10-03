@@ -1,0 +1,20 @@
+{
+  "name": "canastra-limpa",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @canastra/client",
+    "build": "npm run build -w @canastra/client",
+    "test": "npm run test -w @canastra/shared",
+    "typecheck": "tsc -p packages/shared && tsc -p packages/client && tsc -p packages/server",
+    "host": "npm run build && npm run start -w @canastra/server"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}
