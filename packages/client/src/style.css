@@ -1143,15 +1143,14 @@ body {
 
 .morto-stack {
   position: relative;
-  width: calc(var(--card-w) * 1.6);
-  height: calc(var(--card-w) * 1.45);
+  width: calc(var(--card-w) + 8px);
+  height: calc(var(--card-w) * 1.4 + 8px);
 }
 
 .morto-stack .card {
   position: absolute;
-  left: calc(var(--k) * 6px);
-  top: calc(var(--k) * -3px);
-  rotate: calc((var(--k) - 2) * 4deg);
+  left: calc(var(--k) * 2px);
+  top: calc(8px - var(--k) * 2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
 }
 
@@ -1656,10 +1655,6 @@ body {
 
 .stack .card:nth-child(2) {
   transform: translate(3px, -3px);
-}
-
-.stack.mortos .card:nth-child(2) {
-  transform: translate(8px, 4px) rotate(8deg);
 }
 
 .lixo-wrap {

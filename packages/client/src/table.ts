@@ -433,7 +433,7 @@ export function createTable(controller: TableController, options: TableOptions):
         ? el('div', 'card empty', 'vazio')
         : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? (view.lixo.length > 2 ? ' piled' : ' piled-two') : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
     const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen);
-    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', ...Array.from({ length: view.mortosLeft }, () => cardBack())), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false);
+    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', cardBack()), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false);
     return el('section', 'center', monte, lixo, mortos);
   }
 
@@ -703,7 +703,7 @@ export function createTable(controller: TableController, options: TableOptions):
         const top = cards[cards.length - 1]?.getBoundingClientRect();
         layer.remove();
         if (disposed) return;
-        const spots = landingSpots(target, MORTO_CARDS);
+        const spots = landingSpots(target, target === 'monte' ? 1 : MORTO_CARDS);
         if (!top || spots.length === 0) {
           sound.play(landing);
           onLand?.();
