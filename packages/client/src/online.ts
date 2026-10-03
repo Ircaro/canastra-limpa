@@ -14,6 +14,7 @@ import type { TableController } from './local';
 const NAME_KEY = 'canastra-limpa:nome';
 const RETRY_MS = 1500;
 const MAX_RETRIES = 8;
+const ECHO_MS = 4000;
 
 export interface RoomInfo {
   room: string;
@@ -81,6 +82,8 @@ export class OnlineSession {
   private retries = 0;
   private closed = false;
   private joinedOnce = false;
+  private echoTimer: ReturnType<typeof setInterval> | null = null;
+  latency: number | null = null;
 
   constructor(
     first: ClientMessage,
@@ -100,6 +103,8 @@ export class OnlineSession {
 
   close(): void {
     this.closed = true;
+    if (this.echoTimer) clearInterval(this.echoTimer);
+    this.echoTimer = null;
     this.socket?.close();
   }
 
@@ -107,6 +112,7 @@ export class OnlineSession {
     const socket = new WebSocket(socketUrl());
     this.socket = socket;
     socket.addEventListener('open', () => {
+      this.startEcho();
       if (this.room) {
         const token = read(tokenKey(this.room)) ?? undefined;
         this.send({ type: 'join', room: this.room, name: savedName(), ...(token ? { token } : {}) });
@@ -130,6 +136,13 @@ export class OnlineSession {
     });
   }
 
+  private startEcho(): void {
+    if (this.echoTimer) clearInterval(this.echoTimer);
+    const echo = () => this.send({ type: 'eco', t: performance.now() });
+    echo();
+    this.echoTimer = setInterval(echo, ECHO_MS);
+  }
+
   private receive(raw: string): void {
     let message: ServerMessage;
     try {
@@ -141,6 +154,11 @@ export class OnlineSession {
       case 'ping':
         this.send({ type: 'pong' });
         break;
+      case 'eco': {
+        const rtt = performance.now() - message.t;
+        if (rtt >= 0 && rtt < 30_000) this.latency = this.latency === null ? rtt : this.latency * 0.6 + rtt * 0.4;
+        break;
+      }
       case 'joined':
         this.room = message.room;
         this.joinedOnce = true;
@@ -202,6 +220,10 @@ export class OnlineMatch implements TableController {
 
   get isHost(): boolean {
     return this.session.isHost;
+  }
+
+  get latency(): number | null {
+    return this.session.latency;
   }
 
   view(): PlayerView {

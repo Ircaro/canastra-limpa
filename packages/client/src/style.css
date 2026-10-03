@@ -953,6 +953,40 @@ body {
   visibility: hidden;
 }
 
+.ping {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ping-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ping.good .ping-dot {
+  background: #6fdc8c;
+}
+
+.ping.ok .ping-dot {
+  background: #f2c14e;
+}
+
+.ping.bad .ping-dot {
+  background: #ff6b5e;
+}
+
+.ping.wait .ping-dot {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 .dock.morto-arriving .hand .card {
   opacity: 0;
 }

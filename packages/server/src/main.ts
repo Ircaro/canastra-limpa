@@ -150,6 +150,10 @@ sockets.on('connection', (socket, request) => {
     if (++received > MESSAGES_PER_SECOND) return;
     const message = parseClientMessage(data.toString());
     if (!message) return;
+    if (message.type === 'eco') {
+      socket.send(JSON.stringify({ type: 'eco', t: message.t }));
+      return;
+    }
     if (room) {
       room.handle(peer, message);
       return;

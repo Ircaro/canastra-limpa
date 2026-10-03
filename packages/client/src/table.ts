@@ -711,6 +711,7 @@ export function createTable(controller: TableController, options: TableOptions):
       button('Menu', 'button ghost small', options.onMenu),
       el('div', 'scores', score(myTeam), el('span', 'versus', '×'), score(1 - myTeam), toggle, details),
       el('span', 'bar-info', view.rules.meta === 0 ? metaLabel(0) : `Mão ${view.handNumber} · meta ${view.rules.meta}`),
+      controller.latency !== undefined ? pingElement() : null,
       controller.sandbox ? button('Voltar jogada', 'button ghost small', () => controller.sandbox?.undo(), !controller.sandbox.canUndo()) : null,
       controller.sandbox ? button('Ver revelação', 'button ghost small', () => controller.sandbox?.revealDemo(), !myTurn(view)) : null,
       controller.sandbox
@@ -721,6 +722,32 @@ export function createTable(controller: TableController, options: TableOptions):
       button('Regras', 'button ghost small', options.onRules),
     );
   }
+
+  function pingText(): { text: string; level: string } {
+    const latency = controller.latency;
+    if (latency === null || latency === undefined) return { text: '… ms', level: 'wait' };
+    const ms = Math.round(latency);
+    return { text: `${ms} ms`, level: ms < 100 ? 'good' : ms < 250 ? 'ok' : 'bad' };
+  }
+
+  function pingElement(): HTMLElement {
+    const { text, level } = pingText();
+    const element = el('span', `ping ${level}`, el('i', 'ping-dot'), el('span', 'ping-ms', text));
+    element.title = 'Ping: tempo de ida e volta até o servidor';
+    return element;
+  }
+
+  const pingTimer =
+    controller.latency !== undefined
+      ? setInterval(() => {
+          const element = root.querySelector<HTMLElement>('.ping');
+          if (!element) return;
+          const { text, level } = pingText();
+          element.className = `ping ${level}`;
+          const label = element.querySelector('.ping-ms');
+          if (label) label.textContent = text;
+        }, 1000)
+      : null;
 
   let paletteOpen = controller.sandbox !== undefined;
 
@@ -1187,6 +1214,7 @@ export function createTable(controller: TableController, options: TableOptions):
     },
     dispose() {
       disposed = true;
+      if (pingTimer) clearInterval(pingTimer);
       stopAnimations();
       endDrag();
       document.removeEventListener('keydown', onKey);

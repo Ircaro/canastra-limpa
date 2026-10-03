@@ -29,14 +29,16 @@ export type ClientMessage =
   | { type: 'action'; action: Action }
   | { type: 'nextHand' }
   | { type: 'restart' }
-  | { type: 'pong' };
+  | { type: 'pong' }
+  | { type: 'eco'; t: number };
 
 export type ServerMessage =
   | { type: 'joined'; room: string; seat: number; token: string }
   | { type: 'room'; room: string; status: RoomStatus; host: number; you: number; seats: SeatInfo[]; seatsCount: number; rules: RuleSet }
   | { type: 'state'; view: PlayerView; names: string[]; bots: boolean[]; votes: number; needed: number; voted: boolean; turnMs: number | null; turnTotalMs: number }
   | { type: 'error'; code: string; message: string }
-  | { type: 'ping' };
+  | { type: 'ping' }
+  | { type: 'eco'; t: number };
 
 export function normalizeRoomCode(value: string): string {
   return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -134,6 +136,8 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       const action = parseAction(message.action);
       return action ? { type: 'action', action } : null;
     }
+    case 'eco':
+      return typeof message.t === 'number' && Number.isFinite(message.t) ? { type: 'eco', t: message.t } : null;
     case 'start':
     case 'nextHand':
     case 'restart':

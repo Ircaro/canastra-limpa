@@ -53,6 +53,7 @@ export interface TableController {
   readonly waitingNext?: { votes: number; needed: number; voted: boolean };
   readonly turnTimer?: { endsAt: number; total: number } | null;
   readonly isHost?: boolean;
+  readonly latency?: number | null;
   onError?(listener: (message: string) => void): void;
   view(): PlayerView;
   act(action: Action): ActionResult;
