@@ -12,6 +12,16 @@ function rivalMelds(view: PlayerView): Meld[] {
   return view.melds.filter((meld) => meld.team !== teamOf(view.seat));
 }
 
+function meldPriority(meld: Meld): number {
+  const size = meld.cards.length;
+  if (size >= CANASTRA_SIZE) return -size;
+  return size === CANASTRA_SIZE - 1 ? 100 : size;
+}
+
+function meldsByPriority(view: PlayerView): Meld[] {
+  return ownMelds(view).sort((a, b) => meldPriority(b) - meldPriority(a));
+}
+
 function partnerKnown(view: PlayerView): Card[] {
   if (view.seats !== 4) return [];
   return view.known[(view.seat + 2) % 4] ?? [];
@@ -86,7 +96,7 @@ function naturalRuns(cards: readonly Card[]): Card[][] {
 
 function topUseful(view: PlayerView, top: Card): boolean {
   const after = view.hand.length + view.lixo.length;
-  for (const meld of ownMelds(view)) {
+  for (const meld of meldsByPriority(view)) {
     const next = extended(meld, [top]);
     if (keepsClean(meld, next) && remainingOk(view, after - 1, withMeld(view.melds, next))) return true;
   }
@@ -99,7 +109,7 @@ function topUseful(view: PlayerView, top: Card): boolean {
 
 function fechadoUse(view: PlayerView, top: Card): Action | null {
   const remainingAfter = (used: number) => view.hand.length - used + view.lixo.length - 1;
-  for (const meld of ownMelds(view)) {
+  for (const meld of meldsByPriority(view)) {
     const next = extended(meld, [top]);
     if (!keepsClean(meld, next)) continue;
     if (remainingOk(view, remainingAfter(0), withMeld(view.melds, next))) return { type: 'pegarLixo', meld: meld.id, cards: [] };
@@ -148,7 +158,7 @@ function lixoWorth(view: PlayerView): boolean {
 }
 
 function addNatural(view: PlayerView, eager = false): Action | null {
-  for (const meld of ownMelds(view)) {
+  for (const meld of meldsByPriority(view)) {
     for (const card of view.hand) {
       if (isJoker(card)) continue;
       const next = extended(meld, [card]);

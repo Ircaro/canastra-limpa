@@ -406,9 +406,21 @@ export function applyAction(state: GameState, seat: number, action: Action): Act
 
 export const EVENT_PAUSE_MS = 2300;
 
-export function animatedEvents(state: Pick<GameState, 'log' | 'monte'>, fresh: number): number {
+export const LIXO_PAUSE_MS = 450;
+export const LIXO_CARD_PAUSE_MS = 55;
+export const LIXO_ANIMATED_CARDS = 14;
+
+export function lixoPause(count: number): number {
+  return LIXO_PAUSE_MS + LIXO_CARD_PAUSE_MS * Math.min(count, LIXO_ANIMATED_CARDS);
+}
+
+export function eventPause(state: Pick<GameState, 'log' | 'monte'>, fresh: number): number {
   if (fresh <= 0) return 0;
-  return state.log.slice(-Math.min(fresh, state.log.length)).filter((entry) => entry.type === 'morto' || (entry.type === 'monteVazio' && state.monte.length > 0)).length;
+  return state.log.slice(-Math.min(fresh, state.log.length)).reduce((sum, entry) => {
+    if (entry.type === 'morto' || (entry.type === 'monteVazio' && state.monte.length > 0)) return sum + EVENT_PAUSE_MS;
+    if (entry.type === 'pegarLixo') return sum + lixoPause(entry.count);
+    return sum;
+  }, 0);
 }
 
 export function fallbackAction(state: GameState, seat: number): Action {

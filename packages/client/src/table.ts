@@ -1,4 +1,4 @@
-import { isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
+import { lixoPause, isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
 import { play, snapshot, stopAnimations } from './animate';
 import { SUIT_ORDER, cardBack, cardElement, sortHand, type SortMode } from './cards';
 import { button, el } from './dom';
@@ -101,7 +101,8 @@ export function createTable(controller: TableController, options: TableOptions):
 
   function perform(action: Action): boolean {
     if (performance.now() < mortoBlockUntil) {
-      notify(blockReason);
+      if (blockReason) notify(blockReason);
+      else sound.play('error');
       return false;
     }
     const previous = [...selection];
@@ -784,6 +785,9 @@ export function createTable(controller: TableController, options: TableOptions):
           blockReason = 'Aguarde o morto virar monte.';
         }
         else banner('O monte acabou', 'Mão encerrada sem batida', 'neutral');
+      } else if (entry.type === 'pegarLixo' && entry.seat === me) {
+        mortoBlockUntil = Math.max(mortoBlockUntil, performance.now() + lixoPause(entry.count));
+        blockReason = '';
       } else if (entry.type === 'bater') {
         const team = teamOf(entry.seat);
         const title = entry.seat === me ? 'Você bateu!' : `${controller.names[entry.seat]} bateu!`;

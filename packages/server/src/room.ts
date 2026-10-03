@@ -1,7 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import {
-  EVENT_PAUSE_MS,
-  animatedEvents,
+  eventPause,
   applyAction,
   botAction,
   createGame,
@@ -318,8 +317,8 @@ export class Room {
   private changed(): void {
     const state = this.state;
     if (!state) return;
-    const events = animatedEvents(state, state.actions - this.seenActions);
-    if (events > 0) this.pauseUntil = Math.max(now(), this.pauseUntil) + events * EVENT_PAUSE_MS;
+    const pause = eventPause(state, state.actions - this.seenActions);
+    if (pause > 0) this.pauseUntil = Math.max(now(), this.pauseUntil) + pause;
     this.seenActions = state.actions;
     const key = `${state.hand}:${state.turn}:${state.phase}`;
     if (key !== this.turnKey) {

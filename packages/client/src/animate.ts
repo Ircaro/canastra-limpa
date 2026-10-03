@@ -17,6 +17,7 @@ export interface MotionPlan {
   flights: Flight[];
 }
 
+const MAX_VANISH = 14;
 const DURATION = 460;
 const EASING = 'cubic-bezier(0.25, 0.8, 0.25, 1)';
 const FACE_DOWN_SOURCES = ['monte', 'mortos'];
@@ -236,9 +237,10 @@ export function play(root: HTMLElement, before: Snapshot, plan: MotionPlan, vani
   }
   if (!plan.vanishTarget) return;
   const gone = [...before.cards.entries()].filter(([id]) => !present.has(id));
-  if (gone.length === 0 || gone.length > 14) return;
-  const slots = handSlots(root, plan.vanishTarget, gone.length);
-  gone.forEach(([id, rect], i) => {
+  if (gone.length === 0) return;
+  const shown = gone.slice(-MAX_VANISH);
+  const slots = handSlots(root, plan.vanishTarget, shown.length);
+  shown.forEach(([id, rect], i) => {
     const slot = slots[Math.min(i, slots.length - 1)];
     const source = vanished.get(id);
     if (slot) toHand(rect, slot, source ? faceClone(source) : null, i * 45);

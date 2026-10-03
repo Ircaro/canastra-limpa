@@ -1,6 +1,5 @@
 import {
-  EVENT_PAUSE_MS,
-  animatedEvents,
+  eventPause,
   applyAction,
   arrangeSequence,
   botAction,
@@ -271,8 +270,8 @@ export class LocalMatch implements TableController {
   }
 
   private changed(): void {
-    const events = animatedEvents(this.state, this.state.actions - this.seenActions);
-    if (events > 0 && !this.sandbox) this.pauseUntil = Math.max(performance.now(), this.pauseUntil) + events * EVENT_PAUSE_MS;
+    const pause = eventPause(this.state, this.state.actions - this.seenActions);
+    if (pause > 0 && !this.sandbox) this.pauseUntil = Math.max(performance.now(), this.pauseUntil) + pause;
     this.seenActions = this.state.actions;
     for (const listener of this.listeners) listener();
     this.schedule();

@@ -148,6 +148,19 @@ describe('decisões do bot', () => {
     expect(state.minimo[0]).toBe(75);
   });
 
+  it('coloca a carta no jogo que vira canastra em vez de numa canastra pronta', () => {
+    const state = tableFor(2);
+    const low = [1, 2, 3, 4, 5, 6, 7].map((rank) => card(rank, 'paus'));
+    const high = [9, 10, 11, 12, 13, 1].map((rank) => card(rank, 'paus'));
+    state.melds = [
+      { id: 1, team: 0, cards: low, wild: null, limpavel: true },
+      { id: 2, team: 0, cards: high, wild: null, limpavel: true },
+    ];
+    const eight = card(8, 'paus');
+    state.hands[0] = [eight, card(13, 'copas'), card(4, 'ouros')];
+    expect(botAction(viewFor(state, 0), seeded(1))).toEqual({ type: 'adicionar', meld: 2, cards: [eight.id] });
+  });
+
   it('deixa para o parceiro a carta que ele pegou do lixo', () => {
     const state = tableFor(4);
     state.melds = [{ id: 1, team: 0, cards: [card(1), card(2), card(3), card(4), card(5)], wild: null, limpavel: true }];
