@@ -423,7 +423,7 @@ export function createTable(controller: TableController, options: TableOptions):
   function centerElement(view: PlayerView): HTMLElement {
     const drawing = myTurn(view) && view.phase === 'comprar';
     const discarding = playing(view) && selection.size === 1;
-    const monte = pile('Monte', view.monteCount === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack', cardBack(), cardBack()), plural(view.monteCount, 'carta', 'cartas'), () => clickMonte(controller.view()), drawing);
+    const monte = pile('Monte', view.monteCount === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack', cardBack()), plural(view.monteCount, 'carta', 'cartas'), () => clickMonte(controller.view()), drawing);
     const closed = view.rules.lixo === 'fechado';
     const visible = closed ? view.lixo.slice(-2) : view.lixo;
     const lixoCards = visible.map((card, index) => cardElement(card, { selected: closed && choosingMeld && index === visible.length - 1 }));
