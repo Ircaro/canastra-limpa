@@ -64,6 +64,10 @@ const ACTION_SOUNDS: Partial<Record<LastAction['type'], SoundName>> = {
 };
 
 const EVENT_MS = 2100;
+const CENTER_PHASE_MS = 1150;
+const SPREAD_CARD_MS = 480;
+const SPREAD_STAGGER_MS = 42;
+const MORTO_CARDS = 11;
 const BANNER_MS = 2200;
 
 export function createTable(controller: TableController, options: TableOptions): TableUi {
@@ -567,45 +571,131 @@ export function createTable(controller: TableController, options: TableOptions):
     }, start - performance.now());
   }
 
+  function landingSpots(target: string, count: number): DOMRect[] {
+    if (target === 'hand') {
+      const cards = [...root.querySelectorAll<HTMLElement>('.hand .card')].map((card) => card.getBoundingClientRect());
+      if (cards.length > 0) return cards;
+    }
+    const area = anchorRect(target);
+    if (!area) return [];
+    const sample = root.querySelector<HTMLElement>(`[data-anchor="${target}"] .card`)?.getBoundingClientRect();
+    const width = sample && sample.width > 0 ? sample.width : Math.min(area.width, 40);
+    const height = width * 1.4;
+    if (target === 'monte') {
+      const base = sample && sample.width > 0 ? sample : area;
+      return Array.from({ length: count }, (_, i) => new DOMRect(base.left + base.width / 2 - width / 2 + ((i % 3) - 1) * 1.5, base.top + base.height / 2 - height / 2 - i * 0.6, width, height));
+    }
+    const vertical = area.height > area.width * 1.3;
+    return Array.from({ length: count }, (_, i) => {
+      const t = count === 1 ? 0.5 : i / (count - 1);
+      const x = vertical ? area.left + area.width / 2 - width / 2 : area.left + t * Math.max(0, area.width - width);
+      const y = vertical ? area.top + t * Math.max(0, area.height - height) : area.top + area.height / 2 - height / 2;
+      return new DOMRect(x, y, width, height);
+    });
+  }
+
+  function spreadCards(origin: DOMRect, spots: readonly DOMRect[], keep: boolean, onDone: () => void): void {
+    const from = center(origin);
+    const flying = spots.map((spot, i) => {
+      const card = cardBack('morto-card');
+      Object.assign(card.style, { left: `${spot.left}px`, top: `${spot.top}px`, width: `${spot.width}px`, height: `${spot.height}px` });
+      card.style.setProperty('--card-w', `${spot.width}px`);
+      document.body.append(card);
+      const to = center(spot);
+      const scale = origin.width / Math.max(1, spot.width);
+      const tilt = (i - (spots.length - 1) / 2) * 3;
+      const lift = Math.min(90, Math.hypot(from.x - to.x, from.y - to.y) * 0.18);
+      const animation = card.animate(
+        [
+          { transform: `translate(${from.x - to.x}px, ${from.y - to.y}px) scale(${scale}) rotate(${tilt}deg)` },
+          { transform: `translate(${(from.x - to.x) * 0.45}px, ${(from.y - to.y) * 0.45 - lift}px) scale(${(scale + 1) / 2}) rotate(${tilt / 2}deg)`, offset: 0.5 },
+          { transform: 'translate(0px, 0px) scale(1) rotate(0deg)' },
+        ],
+        { duration: SPREAD_CARD_MS, delay: i * SPREAD_STAGGER_MS, easing: 'cubic-bezier(0.3, 0.7, 0.3, 1)', fill: 'backwards' },
+      );
+      if (!keep) animation.onfinish = () => card.remove();
+      return card;
+    });
+    setTimeout(() => {
+      for (const card of flying) card.remove();
+      onDone();
+    }, SPREAD_CARD_MS + Math.max(0, spots.length - 1) * SPREAD_STAGGER_MS + 30);
+  }
+
   function mortoFlight(label: string, target: string, landing: SoundName, onLand?: () => void): void {
     schedule(EVENT_MS, () => {
       const from = anchorRect('mortos');
-      const to = anchorRect(target);
-      if (!from || !to) {
+      if (!from) {
         onLand?.();
         return;
       }
       const start = center(from);
-      const end = center(to);
       const middle = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-      const stack = el('div', 'morto-stack', ...Array.from({ length: 5 }, (_, i) => {
-        const back = cardBack();
-        back.style.setProperty('--k', String(i));
-        return back;
-      }));
+      const stack = el(
+        'div',
+        'morto-stack',
+        ...Array.from({ length: 5 }, (_, i) => {
+          const back = cardBack();
+          back.style.setProperty('--k', String(i));
+          if (i === 4) back.append(el('div', 'morto-shine'));
+          return back;
+        }),
+      );
+      const glow = el('div', 'morto-glow');
       const caption = el('div', 'event-caption', label);
-      const layer = el('div', 'morto-fly', stack, caption);
+      const layer = el('div', 'morto-fly', glow, stack, caption);
       document.body.append(layer);
       const at = (point: { x: number; y: number }, scale: number) => `translate(${point.x}px, ${point.y}px) translate(-50%, -50%) scale(${scale})`;
       sound.play('mortoVoa');
-      const flight = layer.animate(
+      layer.animate(
         [
           { transform: at(start, 0.7), opacity: 0.9, offset: 0 },
-          { transform: at(middle, 1.7), opacity: 1, offset: 0.3 },
-          { transform: at(middle, 1.7), opacity: 1, offset: 0.68 },
-          { transform: at(end, 0.45), opacity: 0.85, offset: 1 },
+          { transform: at(middle, 1.7), opacity: 1, offset: 0.5 },
+          { transform: at(middle, 1.7), opacity: 1, offset: 1 },
         ],
-        { duration: EVENT_MS, easing: 'cubic-bezier(0.45, 0, 0.25, 1)', fill: 'both' },
+        { duration: CENTER_PHASE_MS, easing: 'cubic-bezier(0.45, 0, 0.25, 1)', fill: 'both' },
       );
-      caption.animate([{ opacity: 0 }, { opacity: 0, offset: 0.22 }, { opacity: 1, offset: 0.32 }, { opacity: 1, offset: 0.62 }, { opacity: 0, offset: 0.7 }, { opacity: 0 }], {
-        duration: EVENT_MS,
-        fill: 'both',
-      });
-      flight.onfinish = () => {
+      caption.animate([{ opacity: 0 }, { opacity: 0, offset: 0.35 }, { opacity: 1, offset: 0.55 }, { opacity: 1 }], { duration: CENTER_PHASE_MS, fill: 'both' });
+      glow.animate(
+        [
+          { opacity: 0, transform: 'scale(0.4)' },
+          { opacity: 0, transform: 'scale(0.4)', offset: 0.45 },
+          { opacity: 1, transform: 'scale(1.15)', offset: 0.7 },
+          { opacity: 0.75, transform: 'scale(0.95)', offset: 0.85 },
+          { opacity: 1, transform: 'scale(1.1)' },
+        ],
+        { duration: CENTER_PHASE_MS, fill: 'both' },
+      );
+      stack.querySelector<HTMLElement>('.morto-shine')?.animate(
+        [
+          { backgroundPosition: '160% 0', opacity: 0 },
+          { backgroundPosition: '160% 0', opacity: 1, offset: 0.55 },
+          { backgroundPosition: '-60% 0', opacity: 1 },
+        ],
+        { duration: CENTER_PHASE_MS, fill: 'both' },
+      );
+      setTimeout(() => {
+        if (disposed) return;
+        sound.play('brilho');
+        sparkles(stack, true);
+      }, CENTER_PHASE_MS * 0.55);
+      setTimeout(() => {
+        const cards = stack.querySelectorAll<HTMLElement>('.card');
+        const top = cards[cards.length - 1]?.getBoundingClientRect();
         layer.remove();
-        sound.play(landing);
-        onLand?.();
-      };
+        if (disposed) return;
+        const spots = landingSpots(target, MORTO_CARDS);
+        if (!top || spots.length === 0) {
+          sound.play(landing);
+          onLand?.();
+          return;
+        }
+        sound.play('deal');
+        spreadCards(top, spots, target === 'hand', () => {
+          sound.play(landing);
+          onLand?.();
+        });
+      }, CENTER_PHASE_MS);
       setTimeout(() => layer.remove(), EVENT_MS + 500);
     });
   }
@@ -653,7 +743,7 @@ export function createTable(controller: TableController, options: TableOptions):
             render(false);
           });
         } else {
-          mortoFlight(label, `seat-${entry.seat}`, 'morto');
+          mortoFlight(label, `hand-${entry.seat}`, 'morto');
         }
         mortoBlockUntil = eventsBusyUntil;
         blockReason = 'Aguarde o morto chegar.';

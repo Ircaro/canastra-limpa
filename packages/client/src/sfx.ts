@@ -1,4 +1,4 @@
-export type SoundName = 'select' | 'deselect' | 'draw' | 'discard' | 'meld' | 'add' | 'morto' | 'bater' | 'turn' | 'error' | 'deal' | 'lixo' | 'canastraLimpa' | 'canastraSuja' | 'mortoVoa' | 'mortoMonte';
+export type SoundName = 'select' | 'deselect' | 'draw' | 'discard' | 'meld' | 'add' | 'morto' | 'bater' | 'turn' | 'error' | 'deal' | 'lixo' | 'canastraLimpa' | 'canastraSuja' | 'mortoVoa' | 'mortoMonte' | 'brilho';
 
 const KEY = 'canastra-limpa:som';
 
@@ -100,6 +100,10 @@ const SOUNDS: Record<SoundName, () => void> = {
   mortoVoa: () => {
     swish(0.45, 1400, { gain: 0.22 });
     tone(330, 0.5, { type: 'sine', gain: 0.08, slide: 660 });
+  },
+  brilho: () => {
+    [1568, 2093, 2637, 3136].forEach((frequency, i) => tone(frequency, 0.35, { type: 'sine', gain: 0.045, delay: i * 0.06 }));
+    swish(0.3, 6000, { gain: 0.06, delay: 0.05 });
   },
   mortoMonte: () => {
     [784, 659, 523, 392].forEach((frequency, i) => tone(frequency, 0.2, { type: 'triangle', gain: 0.09, delay: i * 0.08 }));
