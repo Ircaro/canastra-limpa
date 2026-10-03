@@ -97,13 +97,13 @@ describe('vulnerável', () => {
     expect(state.minimo[0]).toBe(75);
   });
 
-  it('o mínimo maior continua nas mãos seguintes, e a abertura volta a ser exigida a cada mão', () => {
+  it('na mão seguinte o mínimo volta para 75 e a abertura volta a ser exigida', () => {
     const state = vulnerable();
     state.minimo = [90, 75];
     state.aberto = [true, false];
     state.phase = 'fimDeMao';
     expect(nextHand(state).ok).toBe(true);
-    expect(state.minimo).toEqual([90, 75]);
+    expect(state.minimo).toEqual([75, 75]);
     expect(state.aberto).toEqual([false, false]);
   });
 

@@ -65,7 +65,7 @@ Vale para o jogo que usa o 2 do mesmo naipe como coringa e, depois, é completad
 
 - A dupla que chega a **1000 pontos** fica vulnerável até o fim da partida. Não vale na partida de uma mão.
 - Vulnerável, a **primeira baixada da dupla em cada mão** precisa somar pelo menos **75 pontos em cartas** antes do descarte. Vale somar todos os jogos baixados naquela vez; bônus de canastra não conta.
-- Se descartar sem chegar ao mínimo, os jogos **voltam para a mão** e a abertura da dupla **sobe 15 pontos** (75, 90, 105...) pelo resto da partida.
+- Se descartar sem chegar ao mínimo, os jogos **voltam para a mão** e a abertura da dupla **sobe 15 pontos** (75, 90, 105...) até o fim da mão. Na mão seguinte, volta para 75.
 - Não dá para ficar sem cartas com a abertura abaixo do mínimo.
 - Depois que a dupla abriu na mão, os dois parceiros baixam livre até a mão acabar.
 

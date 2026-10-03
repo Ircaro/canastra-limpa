@@ -145,6 +145,7 @@ function deal(state: GameState): void {
   state.mortoTaken = [false, false];
   state.mortoCount = [0, 0];
   state.aberto = [false, false];
+  state.minimo = [ABERTURA_MINIMA, ABERTURA_MINIMA];
   state.turn = state.starter;
   state.phase = 'comprar';
   state.hand++;
