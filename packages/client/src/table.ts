@@ -66,6 +66,9 @@ const ACTION_SOUNDS: Partial<Record<LastAction['type'], SoundName>> = {
 const EVENT_MS = 2100;
 const NARROW_PX = 760;
 const MIN_VISIBLE = 0.5;
+const MIN_ZONE_PX = 90;
+const LONG_MELD = 5;
+const SHORT_PX = 520;
 const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
 const CENTER_PHASE_MS = 1150;
 const SPREAD_CARD_MS = 480;
@@ -315,14 +318,14 @@ export function createTable(controller: TableController, options: TableOptions):
     const kind = canastra ? (meld.wild === null ? 'limpa' : 'suja') : '';
     const badge = el('span', `meld-badge ${kind}`.trim(), String(meld.cards.length));
     badge.title = special ? `${CANASTRA_NAMES[special]}, ${plural(meld.cards.length, 'carta', 'cartas')}` : plural(meld.cards.length, 'carta', 'cartas');
-    const ribbon = special ? el('span', 'meld-ribbon', CANASTRA_NAMES[special]) : null;
     const royal = special === 'canastrao' || special === 'canastraoReal' ? ` ${special}` : '';
     const remove = controller.sandbox ? button('×', 'meld-remove', () => controller.sandbox?.removeMeld(meld.id)) : null;
     if (remove) {
       remove.setAttribute('aria-label', 'Tirar este jogo da mesa');
       remove.addEventListener('click', (event) => event.stopPropagation());
     }
-    const element = el('div', canastra ? `meld canastra ${kind}${royal}` : 'meld', ribbon, cards, badge, remove);
+    const line = canastra ? el('span', 'meld-line') : null;
+    const element = el('div', `${canastra ? `meld canastra ${kind}${royal}` : 'meld'}${meld.cards.length >= LONG_MELD ? ' long' : ''}`, cards, line, badge, remove);
     const party = celebrating.get(meld.id);
     if (party && canastra) {
       const elapsed = performance.now() - party;
@@ -1149,10 +1152,22 @@ export function createTable(controller: TableController, options: TableOptions):
 
   function fitMelds(): void {
     const narrow = window.innerWidth <= NARROW_PX;
-    const floor = narrow ? 0.5 : 0.62;
+    const floor = narrow || window.innerHeight <= SHORT_PX ? 0.42 : 0.62;
+    const felt = root.querySelector<HTMLElement>('.felt');
+    const zones = ['.melds.theirs', '.melds.ours'].map((selector) => root.querySelector<HTMLElement>(selector));
+    for (const zone of zones) {
+      zone?.style.setProperty('--meld-scale', '1');
+      zone?.classList.remove('compact');
+    }
+    if (felt) {
+      felt.style.gridTemplateRows = '';
+      const needs = zones.map((zone) => (zone ? Math.max(MIN_ZONE_PX, [...zone.children].reduce((sum, child) => sum + (child as HTMLElement).offsetHeight, 0) + 24) : MIN_ZONE_PX));
+      felt.style.gridTemplateRows = `auto minmax(0, ${needs[0]}fr) minmax(0, ${needs[1]}fr)`;
+    }
     for (const zone of root.querySelectorAll<HTMLElement>('.melds')) {
       let scale = 1;
       zone.style.setProperty('--meld-scale', '1');
+      if (zone.scrollHeight > zone.clientHeight + 1) zone.classList.add('compact');
       while (zone.scrollHeight > zone.clientHeight + 1 && scale > floor) {
         scale = Math.round((scale - 0.06) * 100) / 100;
         zone.style.setProperty('--meld-scale', String(scale));

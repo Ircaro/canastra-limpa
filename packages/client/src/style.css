@@ -664,23 +664,40 @@ body {
 }
 
 .meld.canastra {
-  margin-top: 6px;
-  padding: 12px 10px 10px 6px;
-  border-radius: 12px;
+  padding-bottom: 12px;
 }
 
-.meld.canastra.limpa {
-  background: linear-gradient(160deg, rgba(255, 217, 120, 0.22), rgba(227, 154, 45, 0.06));
-  box-shadow:
-    0 0 0 2px #f2c14e,
-    0 0 18px rgba(242, 193, 78, 0.45);
+.meld-line {
+  position: absolute;
+  left: 4px;
+  right: 10px;
+  bottom: 2px;
+  height: 4px;
+  border-radius: 2px;
+  pointer-events: none;
+  background: #f2c14e;
+  box-shadow: 0 0 8px rgba(242, 193, 78, 0.6);
 }
 
-.meld.canastra.suja {
-  background: linear-gradient(160deg, rgba(200, 125, 70, 0.24), rgba(120, 70, 30, 0.06));
-  box-shadow:
-    0 0 0 2px #c07a45,
-    0 0 12px rgba(192, 122, 69, 0.35);
+.meld.suja .meld-line {
+  background: #c07a45;
+  box-shadow: 0 0 6px rgba(192, 122, 69, 0.5);
+}
+
+.meld.canastrao .meld-line {
+  background: linear-gradient(90deg, #d7b4ff, #9b5cf0);
+  box-shadow: 0 0 8px rgba(170, 110, 255, 0.6);
+}
+
+.meld.canastraoReal .meld-line {
+  background: linear-gradient(90deg, #ffd1e8, #fff1a8, #b8f5e0, #bcd4ff, #e7c6ff, #ffd1e8);
+  background-size: 200% 100%;
+  box-shadow: 0 0 10px rgba(200, 170, 255, 0.7);
+  animation: rainbow-slide 4s linear infinite;
+}
+
+.melds.compact .meld.long .meld-cards .card + .card:not(:last-child) {
+  margin-left: calc(var(--card-w) * -0.8);
 }
 
 .meld.canastra .meld-cards .card + .card {
@@ -708,12 +725,6 @@ body {
     glow-suja 1.3s ease-out var(--party-delay, 0ms) backwards;
 }
 
-.meld.canastra.canastrao {
-  background: linear-gradient(160deg, rgba(186, 120, 255, 0.28), rgba(90, 40, 160, 0.1));
-  box-shadow:
-    0 0 0 2px #b77bff,
-    0 0 18px rgba(170, 110, 255, 0.55);
-}
 
 .meld.canastra.canastrao .meld-ribbon {
   color: #ffffff;
@@ -725,14 +736,6 @@ body {
   background: #7b3fd6;
 }
 
-.meld.canastra.canastraoReal {
-  background:
-    linear-gradient(115deg, rgba(255, 120, 160, 0.18), rgba(255, 230, 120, 0.18), rgba(120, 230, 200, 0.18), rgba(130, 170, 255, 0.2), rgba(220, 140, 255, 0.18));
-  box-shadow:
-    0 0 0 2px #ffffff,
-    0 0 0 4px rgba(150, 200, 255, 0.7),
-    0 0 26px rgba(200, 170, 255, 0.6);
-}
 
 .meld.canastraoReal::before {
   content: '';
@@ -769,12 +772,12 @@ body {
 @keyframes glow-royal {
   0% {
     box-shadow:
-      0 0 0 2px #b77bff,
+      0 0 0 0 rgba(0, 0, 0, 0),
       0 0 0 0 rgba(183, 123, 255, 0.95);
   }
   100% {
     box-shadow:
-      0 0 0 2px #b77bff,
+      0 0 0 0 rgba(0, 0, 0, 0),
       0 0 0 34px rgba(183, 123, 255, 0);
   }
 }
@@ -1492,12 +1495,12 @@ body {
 @keyframes glow-limpa {
   0% {
     box-shadow:
-      0 0 0 2px #f2c14e,
+      0 0 0 0 rgba(0, 0, 0, 0),
       0 0 0 0 rgba(242, 193, 78, 0.9);
   }
   100% {
     box-shadow:
-      0 0 0 2px #f2c14e,
+      0 0 0 0 rgba(0, 0, 0, 0),
       0 0 0 30px rgba(242, 193, 78, 0);
   }
 }
@@ -1505,12 +1508,12 @@ body {
 @keyframes glow-suja {
   0% {
     box-shadow:
-      0 0 0 2px #c07a45,
+      0 0 0 0 rgba(0, 0, 0, 0),
       0 0 0 0 rgba(192, 122, 69, 0.85);
   }
   100% {
     box-shadow:
-      0 0 0 2px #c07a45,
+      0 0 0 0 rgba(0, 0, 0, 0),
       0 0 0 26px rgba(192, 122, 69, 0);
   }
 }
@@ -1883,6 +1886,7 @@ body {
   text-align: center;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
   z-index: 20;
+  pointer-events: none;
   animation: rise 0.25s ease-out;
 }
 
@@ -2041,6 +2045,12 @@ body {
 
   .felt {
     overflow: hidden;
+  }
+
+  .toast {
+    top: 38%;
+    bottom: auto;
+    font-size: 0.9rem;
   }
 }
 
