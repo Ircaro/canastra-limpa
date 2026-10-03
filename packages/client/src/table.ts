@@ -1,4 +1,4 @@
-import { explainSequence, isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
+import { isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
 import { play, snapshot, stopAnimations } from './animate';
 import { SUIT_ORDER, cardBack, cardElement, sortHand, type SortMode } from './cards';
 import { button, el } from './dom';
@@ -68,6 +68,7 @@ const NARROW_PX = 760;
 const MIN_VISIBLE = 0.5;
 const MIN_ZONE_PX = 90;
 const LONG_MELD = 4;
+const NUDGE_MS = 900;
 const SHORT_PX = 520;
 const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
 const CENTER_PHASE_MS = 1150;
@@ -163,19 +164,47 @@ export function createTable(controller: TableController, options: TableOptions):
       notify('Um jogo precisa de pelo menos 3 cartas.');
       return;
     }
-    const hint = wildHint(view, cardsOf(view, ids));
-    if (hint) {
-      notify(hint);
+    const spare = missingWild(view, cardsOf(view, ids));
+    if (spare) {
+      nudge({ card: spare.id });
       return;
     }
     perform({ type: 'baixar', cards: ids });
   }
 
-  function wildHint(view: PlayerView, cards: readonly Card[]): string | null {
+  function missingWild(view: PlayerView, cards: readonly Card[]): Card | null {
     if (cards.length < 2 || arrangeSequence(cards)) return null;
     const spare = view.hand.find((card) => isWild(card) && !cards.some((item) => item.id === card.id));
-    if (!spare || !arrangeSequence([...cards, spare])) return null;
-    return `Faltou selecionar o ${spare.rank === 2 ? '2' : 'coringa'}: ele entra no lugar da carta que falta.`;
+    return spare && arrangeSequence([...cards, spare]) ? spare : null;
+  }
+
+  function nudge(hint: { pile?: string; card?: number }): void {
+    sound.play('error');
+    nudgeUntil = performance.now() + NUDGE_MS;
+    nudgePile = hint.pile ?? null;
+    nudgeCard = hint.card ?? null;
+    setTimeout(() => {
+      if (performance.now() >= nudgeUntil) render(false);
+    }, NUDGE_MS + 20);
+    render(false);
+  }
+
+  function nudging(): boolean {
+    return performance.now() < nudgeUntil;
+  }
+
+  function closedTopUsable(view: PlayerView): boolean {
+    const top = view.lixo[view.lixo.length - 1];
+    if (!top) return false;
+    const chosen = cardsOf(view, selection);
+    if (chosen.length >= 2 && arrangeSequence([top, ...chosen])) return true;
+    if (view.melds.some((meld) => meld.team === myTeam && extendMeld(meld, [top, ...chosen], view.rules) !== null)) return true;
+    if (chosen.length > 0) return false;
+    const hand = view.hand;
+    for (let i = 0; i < hand.length; i++) {
+      for (let j = i + 1; j < hand.length; j++) if (arrangeSequence([top, hand[i], hand[j]])) return true;
+    }
+    return false;
   }
 
   function descartar(ids: number[]): void {
@@ -253,24 +282,26 @@ export function createTable(controller: TableController, options: TableOptions):
       return;
     }
     const cards = [...selection];
-    if (cards.length >= 2) {
-      const top = view.lixo[view.lixo.length - 1];
-      const chosen = cardsOf(view, cards);
-      const hint = top ? wildHint(view, [top, ...chosen]) : null;
-      if (hint) notify(hint);
-      else if (top && !arrangeSequence([top, ...chosen])) notify(`Lixo fechado: a carta de cima precisa formar jogo com as cartas selecionadas. ${explainSequence([top, ...chosen])}`);
-      else perform({ type: 'pegarLixo', cards });
+    const top = view.lixo[view.lixo.length - 1];
+    const chosen = cardsOf(view, cards);
+    const fits = top ? view.melds.filter((meld) => meld.team === myTeam && extendMeld(meld, [top, ...chosen], view.rules) !== null) : [];
+    if (cards.length >= 2 && top && arrangeSequence([top, ...chosen])) {
+      perform({ type: 'pegarLixo', cards });
       return;
     }
-    const top = view.lixo[view.lixo.length - 1];
-    const chosen = view.hand.filter((card) => selection.has(card.id));
-    const fits = view.melds.filter((meld) => meld.team === myTeam && extendMeld(meld, [top, ...chosen], view.rules) !== null);
-    if (fits.length === 1) perform({ type: 'pegarLixo', meld: fits[0].id, cards });
-    else if (fits.length > 1) {
+    if (fits.length === 1) {
+      perform({ type: 'pegarLixo', meld: fits[0].id, cards });
+      return;
+    }
+    if (fits.length > 1) {
       choosingMeld = true;
       lixoOpen = false;
-      notify('Escolha o jogo onde a carta de cima do lixo vai entrar.', false);
-    } else notify('Lixo fechado: para pegar, a carta de cima precisa entrar num jogo. Selecione na mão as cartas que fazem jogo com ela, ou toque num jogo seu em que ela caiba.');
+      sound.play('select');
+      render(false);
+      return;
+    }
+    const spare = top ? missingWild(view, [top, ...chosen]) : null;
+    nudge(spare ? { card: spare.id } : { pile: 'lixo' });
   }
 
   function clickMeld(view: PlayerView, meld: Meld): void {
@@ -452,7 +483,9 @@ export function createTable(controller: TableController, options: TableOptions):
       view.lixo.length === 0
         ? el('div', 'card empty', 'vazio')
         : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? ' piled' : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
-    const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen);
+    const lixoReady = drawing && view.lixo.length > 0 && (!closed || closedTopUsable(view));
+    const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), lixoReady || discarding || lixoOpen);
+    if (nudging() && nudgePile === 'lixo') lixo.classList.add('nudge');
     const mortos = pile('Mortos', el('div', 'stack mortos', ...Array.from({ length: view.mortosLeft }, () => cardBack())), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false);
     return el('section', 'center', monte, lixo, mortos);
   }
@@ -479,6 +512,7 @@ export function createTable(controller: TableController, options: TableOptions):
       const element = cardElement(card, { selected: selection.has(card.id) });
       element.style.setProperty('--i', String(index));
       if (!showing && picked.has(card.id)) element.classList.add('picked', ...(card.id === view.lixoTop ? ['locked'] : []));
+      if (nudging() && nudgeCard === card.id) element.classList.add('nudge');
       if (showing) element.append(el('span', 'deduct', `-${cardPoints(card)}`));
       element.tabIndex = 0;
       element.setAttribute('role', 'button');
@@ -588,6 +622,9 @@ export function createTable(controller: TableController, options: TableOptions):
   let eventsBusyUntil = 0;
   let mortoArrivingUntil = 0;
   let mortoBlockUntil = 0;
+  let nudgeUntil = 0;
+  let nudgePile: string | null = null;
+  let nudgeCard: number | null = null;
   const seatHold = new Map<number, number>();
   let blockReason = 'Aguarde o morto chegar.';
   let popHand = false;

@@ -1071,6 +1071,46 @@ body {
   background: #ffdede;
 }
 
+.pile.nudge {
+  animation: nudge 0.45s ease-in-out;
+}
+
+.hand .card.nudge {
+  animation: nudge-card 0.3s ease-in-out 3;
+  box-shadow:
+    0 0 0 3px #ff6b6b,
+    0 0 14px rgba(255, 107, 107, 0.8);
+}
+
+@keyframes nudge {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  20% {
+    translate: -6px 0;
+  }
+  40% {
+    translate: 6px 0;
+  }
+  60% {
+    translate: -4px 0;
+  }
+  80% {
+    translate: 4px 0;
+  }
+}
+
+@keyframes nudge-card {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+
 .dock.morto-arriving .hand .card {
   opacity: 0;
   pointer-events: none;
