@@ -68,7 +68,6 @@ const NARROW_PX = 760;
 const MIN_VISIBLE = 0.5;
 const MIN_ZONE_PX = 90;
 const LONG_MELD = 4;
-const NUDGE_MS = 900;
 const SHORT_PX = 520;
 const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
 const CENTER_PHASE_MS = 1150;
@@ -164,47 +163,7 @@ export function createTable(controller: TableController, options: TableOptions):
       notify('Um jogo precisa de pelo menos 3 cartas.');
       return;
     }
-    const spare = missingWild(view, cardsOf(view, ids));
-    if (spare) {
-      nudge({ card: spare.id });
-      return;
-    }
     perform({ type: 'baixar', cards: ids });
-  }
-
-  function missingWild(view: PlayerView, cards: readonly Card[]): Card | null {
-    if (cards.length < 2 || arrangeSequence(cards)) return null;
-    const spare = view.hand.find((card) => isWild(card) && !cards.some((item) => item.id === card.id));
-    return spare && arrangeSequence([...cards, spare]) ? spare : null;
-  }
-
-  function nudge(hint: { pile?: string; card?: number }): void {
-    sound.play('error');
-    nudgeUntil = performance.now() + NUDGE_MS;
-    nudgePile = hint.pile ?? null;
-    nudgeCard = hint.card ?? null;
-    setTimeout(() => {
-      if (performance.now() >= nudgeUntil) render(false);
-    }, NUDGE_MS + 20);
-    render(false);
-  }
-
-  function nudging(): boolean {
-    return performance.now() < nudgeUntil;
-  }
-
-  function closedTopUsable(view: PlayerView): boolean {
-    const top = view.lixo[view.lixo.length - 1];
-    if (!top) return false;
-    const chosen = cardsOf(view, selection);
-    if (chosen.length >= 2 && arrangeSequence([top, ...chosen])) return true;
-    if (view.melds.some((meld) => meld.team === myTeam && extendMeld(meld, [top, ...chosen], view.rules) !== null)) return true;
-    if (chosen.length > 0) return false;
-    const hand = view.hand;
-    for (let i = 0; i < hand.length; i++) {
-      for (let j = i + 1; j < hand.length; j++) if (arrangeSequence([top, hand[i], hand[j]])) return true;
-    }
-    return false;
   }
 
   function descartar(ids: number[]): void {
@@ -268,7 +227,9 @@ export function createTable(controller: TableController, options: TableOptions):
       return;
     }
     if (view.rules.lixo === 'fechado' && myTurn(view) && view.phase === 'comprar') {
-      takeLixo(view);
+      choosingMeld = !choosingMeld;
+      sound.play(choosingMeld ? 'select' : 'deselect');
+      render(false);
       return;
     }
     lixoOpen = !lixoOpen;
@@ -277,31 +238,7 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function takeLixo(view: PlayerView): void {
-    if (view.rules.lixo === 'aberto') {
-      perform({ type: 'pegarLixo' });
-      return;
-    }
-    const cards = [...selection];
-    const top = view.lixo[view.lixo.length - 1];
-    const chosen = cardsOf(view, cards);
-    const fits = top ? view.melds.filter((meld) => meld.team === myTeam && extendMeld(meld, [top, ...chosen], view.rules) !== null) : [];
-    if (cards.length >= 2 && top && arrangeSequence([top, ...chosen])) {
-      perform({ type: 'pegarLixo', cards });
-      return;
-    }
-    if (fits.length === 1) {
-      perform({ type: 'pegarLixo', meld: fits[0].id, cards });
-      return;
-    }
-    if (fits.length > 1) {
-      choosingMeld = true;
-      lixoOpen = false;
-      sound.play('select');
-      render(false);
-      return;
-    }
-    const spare = top ? missingWild(view, [top, ...chosen]) : null;
-    nudge(spare ? { card: spare.id } : { pile: 'lixo' });
+    if (view.rules.lixo === 'aberto') perform({ type: 'pegarLixo' });
   }
 
   function clickMeld(view: PlayerView, meld: Meld): void {
@@ -316,7 +253,7 @@ export function createTable(controller: TableController, options: TableOptions):
       }
     }
     if (!myTurn(view) || meld.team !== myTeam) return;
-    if (view.phase === 'comprar' && (choosingMeld || (view.rules.lixo === 'fechado' && view.lixo.length > 0))) {
+    if (view.phase === 'comprar' && choosingMeld) {
       perform({ type: 'pegarLixo', meld: meld.id, cards: [...selection] });
       return;
     }
@@ -405,7 +342,7 @@ export function createTable(controller: TableController, options: TableOptions):
     const selected = cardsOf(view, selection);
     const clickable =
       ours &&
-      ((playing(view) && fitsMeld(meld, selected)) || ((choosingMeld || view.rules.lixo === 'fechado') && myTurn(view) && view.phase === 'comprar' && top !== undefined && fitsMeld(meld, [top, ...selected])));
+      ((playing(view) && fitsMeld(meld, selected)) || (choosingMeld && myTurn(view) && view.phase === 'comprar' && top !== undefined && fitsMeld(meld, [top, ...selected])));
     if (clickable) {
       element.classList.add('target');
       element.tabIndex = 0;
@@ -425,15 +362,22 @@ export function createTable(controller: TableController, options: TableOptions):
     const morto = view.mortoCount[team] > 0 ? el('span', 'tag morto-ok', view.mortoCount[team] > 1 ? 'pegou os 2 mortos' : 'pegou o morto') : null;
     const ours = team === myTeam;
     const items = melds.map((meld) => meldElement(view, meld));
-    if (ours && playing(view) && selection.size >= 3) {
-      const valid = formsMeld(cardsOf(view, selection));
+    const withTop = choosingMeld && myTurn(view) && view.phase === 'comprar' && view.lixo.length > 0;
+    if (ours && ((playing(view) && selection.size >= 3) || (withTop && selection.size >= 2))) {
+      const chosen = cardsOf(view, selection);
+      const valid = formsMeld(withTop ? [view.lixo[view.lixo.length - 1], ...chosen] : chosen);
       const slot = el('div', `meld new-slot${valid ? ' target' : ' invalid'}`, el('span', 'new-plus', '+'), el('span', 'new-label', valid ? 'Baixar novo jogo' : 'Não forma sequência'));
       slot.dataset.drop = 'new';
       slot.tabIndex = 0;
       slot.setAttribute('role', 'button');
-      slot.addEventListener('click', () => baixar([...selection]));
+      const lay = () => {
+        if (!valid) sound.play('error');
+        else if (withTop) perform({ type: 'pegarLixo', cards: [...selection] });
+        else baixar([...selection]);
+      };
+      slot.addEventListener('click', lay);
       slot.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') baixar([...selection]);
+        if (event.key === 'Enter' || event.key === ' ') lay();
       });
       items.push(slot);
     }
@@ -477,15 +421,13 @@ export function createTable(controller: TableController, options: TableOptions):
     const monte = pile('Monte', view.monteCount === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack', cardBack(), cardBack()), plural(view.monteCount, 'carta', 'cartas'), () => clickMonte(controller.view()), drawing);
     const closed = view.rules.lixo === 'fechado';
     const visible = closed ? view.lixo.slice(-2) : view.lixo;
-    const lixoCards = visible.map((card) => cardElement(card));
+    const lixoCards = visible.map((card, index) => cardElement(card, { selected: closed && choosingMeld && index === visible.length - 1 }));
     const expanded = lixoOpen && !closed;
     const lixoContent =
       view.lixo.length === 0
         ? el('div', 'card empty', 'vazio')
         : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? ' piled' : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
-    const lixoReady = drawing && view.lixo.length > 0 && (!closed || closedTopUsable(view));
-    const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), lixoReady || discarding || lixoOpen);
-    if (nudging() && nudgePile === 'lixo') lixo.classList.add('nudge');
+    const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen);
     const mortos = pile('Mortos', el('div', 'stack mortos', ...Array.from({ length: view.mortosLeft }, () => cardBack())), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false);
     return el('section', 'center', monte, lixo, mortos);
   }
@@ -512,7 +454,6 @@ export function createTable(controller: TableController, options: TableOptions):
       const element = cardElement(card, { selected: selection.has(card.id) });
       element.style.setProperty('--i', String(index));
       if (!showing && picked.has(card.id)) element.classList.add('picked', ...(card.id === view.lixoTop ? ['locked'] : []));
-      if (nudging() && nudgeCard === card.id) element.classList.add('nudge');
       if (showing) element.append(el('span', 'deduct', `-${cardPoints(card)}`));
       element.tabIndex = 0;
       element.setAttribute('role', 'button');
@@ -622,9 +563,6 @@ export function createTable(controller: TableController, options: TableOptions):
   let eventsBusyUntil = 0;
   let mortoArrivingUntil = 0;
   let mortoBlockUntil = 0;
-  let nudgeUntil = 0;
-  let nudgePile: string | null = null;
-  let nudgeCard: number | null = null;
   const seatHold = new Map<number, number>();
   let blockReason = 'Aguarde o morto chegar.';
   let popHand = false;
