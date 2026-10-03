@@ -822,10 +822,6 @@ export function createTable(controller: TableController, options: TableOptions):
       el('span', 'bar-info', view.rules.meta === 0 ? metaLabel(0) : `Mão ${view.handNumber} · meta ${view.rules.meta}`),
       controller.latency !== undefined ? pingBadge(() => controller.latency) : null,
       controller.sandbox ? button('Voltar jogada', 'button ghost small', () => controller.sandbox?.undo(), !controller.sandbox.canUndo()) : null,
-      controller.sandbox ? button('Ver revelação', 'button ghost small', () => controller.sandbox?.revealDemo(), !myTurn(view)) : null,
-      controller.sandbox
-        ? button(isVulnerable(view, myTeam) ? 'Sair do vulnerável' : 'Ficar vulnerável', 'button ghost small', () => controller.sandbox?.toggleVulnerable(), !myTurn(view))
-        : null,
       controller.sandbox ? button(paletteOpen ? 'Fechar cartas' : 'Cartas', `button small ${paletteOpen ? 'primary' : 'ghost'}`, togglePalette) : null,
       soundButton(),
       button('Regras', 'button ghost small', options.onRules),
@@ -856,6 +852,7 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function paletteTools(sandbox: NonNullable<TableController['sandbox']>): HTMLElement[] {
+    const view = controller.view();
     const targets: [typeof paletteTarget, string][] = [
       ['mao', 'Minha mão'],
       ['lixo', 'Descarte do oponente'],
@@ -915,6 +912,8 @@ export function createTable(controller: TableController, options: TableOptions):
       button('Eu pego o morto', 'button ghost small', () => sandbox.mortoDemo('eu')),
       button('Oponente pega o morto', 'button ghost small', () => sandbox.mortoDemo('oponente')),
       button('Morto vira monte', 'button ghost small', () => sandbox.mortoDemo('monte')),
+      button('Revelação do fim', 'button ghost small', () => sandbox.revealDemo(), !myTurn(view)),
+      button(isVulnerable(view, myTeam) ? 'Sair do vulnerável' : 'Ficar vulnerável', 'button ghost small', () => sandbox.toggleVulnerable(), !myTurn(view)),
     );
     return [switcher, ...(draftRow ? [draftRow] : []), extras, simulate];
   }
