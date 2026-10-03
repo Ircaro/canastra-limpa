@@ -1681,6 +1681,13 @@ body {
 }
 
 
+.lixo-wrap.piled-two .lixo-cards .card {
+  box-shadow:
+    -3px 3px 0 #ffffff,
+    -4px 4px 0 #b9c0c7,
+    0 1px 3px rgba(0, 0, 0, 0.28);
+}
+
 .lixo-wrap.piled .lixo-cards .card {
   box-shadow:
     -2px 2px 0 #ffffff,

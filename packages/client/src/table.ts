@@ -392,8 +392,13 @@ export function createTable(controller: TableController, options: TableOptions):
       zone.addEventListener('click', (event) => {
         const target = event.target as HTMLElement;
         if (target.closest('.meld') || selection.size === 0) return;
-        if (!myTurn(controller.view())) notify('Aguarde a sua vez.');
-        else if (controller.view().phase === 'comprar') notify('Compre uma carta antes de baixar um jogo.');
+        const current = controller.view();
+        const top = current.lixo[current.lixo.length - 1];
+        if (!myTurn(current)) notify('Aguarde a sua vez.');
+        else if (current.phase === 'comprar' && choosingMeld && top) {
+          if (formsMeld([top, ...cardsOf(current, selection)])) perform({ type: 'pegarLixo', cards: [...selection] });
+          else sound.play('error');
+        } else if (current.phase === 'comprar') notify('Compre uma carta antes de baixar um jogo.');
         else baixar([...selection]);
       });
     }
@@ -426,7 +431,7 @@ export function createTable(controller: TableController, options: TableOptions):
     const lixoContent =
       view.lixo.length === 0
         ? el('div', 'card empty', 'vazio')
-        : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? ' piled' : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
+        : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? (view.lixo.length > 2 ? ' piled' : ' piled-two') : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
     const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen);
     const mortos = pile('Mortos', el('div', 'stack mortos', ...Array.from({ length: view.mortosLeft }, () => cardBack())), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false);
     return el('section', 'center', monte, lixo, mortos);
