@@ -18,6 +18,7 @@ export interface MotionPlan {
 }
 
 const MAX_VANISH = 14;
+const SEAT_CARD_PX = 22;
 const DURATION = 460;
 const EASING = 'cubic-bezier(0.25, 0.8, 0.25, 1)';
 const FACE_DOWN_SOURCES = ['monte', 'mortos'];
@@ -36,7 +37,14 @@ function reducedMotion(): boolean {
 function anchorRect(element: HTMLElement): DOMRect {
   const rect = element.classList.contains('backs') && element.lastElementChild ? element.lastElementChild.getBoundingClientRect() : element.getBoundingClientRect();
   if (rect.width > 0) return rect;
-  return (element.closest<HTMLElement>('.seat') ?? element).getBoundingClientRect();
+  return seatSpot(element);
+}
+
+function seatSpot(element: HTMLElement): DOMRect {
+  const seat = (element.closest<HTMLElement>('.seat') ?? element).getBoundingClientRect();
+  const width = Math.min(SEAT_CARD_PX, seat.width);
+  const height = width * 1.4;
+  return new DOMRect(seat.left + seat.width / 2 - width / 2, seat.top + seat.height / 2 - height / 2, width, height);
 }
 
 export function snapshot(root: HTMLElement): Snapshot {
@@ -157,7 +165,7 @@ function flyFrom(element: HTMLElement, from: DOMRect, to: DOMRect, delay: number
 
 function toHand(from: DOMRect, target: HTMLElement, front: HTMLElement | null, delay: number): void {
   let to = target.getBoundingClientRect();
-  if (to.width === 0) to = (target.closest<HTMLElement>('.seat') ?? target).getBoundingClientRect();
+  if (to.width === 0) to = seatSpot(target);
   const lying = landscape(to);
   const start = new DOMRect(centerOf(from).x - from.width / 2, centerOf(from).y - from.height / 2, from.width, from.height);
   const { wrapper, inner } = flipper(front, start);
