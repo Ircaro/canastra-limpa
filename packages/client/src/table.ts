@@ -1,6 +1,6 @@
-import { isVulnerable, needsOpening, openingPoints, ABERTURA_PASSO, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
+import { isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
 import { play, snapshot, stopAnimations } from './animate';
-import { cardBack, cardElement, sortHand, type SortMode } from './cards';
+import { SUIT_ORDER, cardBack, cardElement, sortHand, type SortMode } from './cards';
 import { button, el } from './dom';
 import type { SandboxCard, TableController } from './local';
 import { sound, type SoundName } from './sfx';
@@ -90,6 +90,10 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function perform(action: Action): boolean {
+    if (performance.now() < mortoBlockUntil) {
+      notify(blockReason);
+      return false;
+    }
     const previous = [...selection];
     const wasChoosing = choosingMeld;
     selection.clear();
@@ -151,47 +155,12 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function descartar(ids: number[]): void {
-    const view = controller.view();
-    if (!playing(view)) return;
+    if (!playing(controller.view())) return;
     if (ids.length !== 1) {
       notify('Para descartar, use uma carta só.');
       return;
     }
-    const points = openingPoints(view.melds, myTeam);
-    if (needsOpening(view, myTeam) && points > 0 && points < view.minimo[myTeam]) {
-      confirmShortOpening(view, points, () => perform({ type: 'descartar', card: ids[0] }));
-      return;
-    }
     perform({ type: 'descartar', card: ids[0] });
-  }
-
-  function confirmShortOpening(view: PlayerView, points: number, onDiscard: () => void): void {
-    const minimo = view.minimo[myTeam];
-    const close = () => backdrop.remove();
-    const backdrop = el(
-      'div',
-      'modal-backdrop',
-      el(
-        'div',
-        'modal',
-        el('h2', '', 'Abertura incompleta'),
-        el('p', 'muted', `Seus jogos somam ${points} de ${minimo} pontos. Se descartar agora, eles voltam para a mão e a abertura da dupla sobe para ${minimo + ABERTURA_PASSO}.`),
-        el(
-          'div',
-          'actions',
-          button('Continuar jogando', 'button primary', close),
-          button('Descartar mesmo assim', 'button secondary', () => {
-            close();
-            onDiscard();
-          }),
-        ),
-      ),
-    );
-    backdrop.addEventListener('click', (event) => {
-      if (event.target === backdrop) close();
-    });
-    document.body.append(backdrop);
-    backdrop.querySelector<HTMLElement>('.button.primary')?.focus();
   }
 
   function vulnerableTag(view: PlayerView, team: number): HTMLElement | null {
@@ -446,11 +415,33 @@ export function createTable(controller: TableController, options: TableOptions):
     return el('section', 'center', monte, lixo, mortos);
   }
 
+  let picked = new Set<number>();
+  let pickedSeen = -1;
+  let handBefore = new Set<number>();
+
+  function trackPicked(view: PlayerView): void {
+    if (pickedSeen >= 0 && view.actions !== pickedSeen) {
+      const latest = view.log[view.log.length - 1];
+      if (latest && latest.seat === me && (latest.type === 'comprar' || latest.type === 'pegarLixo')) {
+        picked = new Set(view.hand.filter((card) => !handBefore.has(card.id)).map((card) => card.id));
+      }
+    }
+    pickedSeen = view.actions;
+    if (!playing(view)) picked = new Set();
+    handBefore = new Set(view.hand.map((card) => card.id));
+  }
+
   function handElement(view: PlayerView): HTMLElement {
     const showing = revealing(view);
     const cards = sortHand(view.hand, sortMode).map((card, index) => {
       const element = cardElement(card, { selected: selection.has(card.id) });
       element.style.setProperty('--i', String(index));
+      if (!showing && picked.has(card.id)) {
+        const locked = card.id === view.lixoTop;
+        const mark = el('span', `pick-mark${locked ? ' locked' : ''}`);
+        mark.title = locked ? 'Única carta que você pegou do lixo: não pode ser descartada nesta vez' : 'Você pegou esta carta nesta vez';
+        element.append(mark);
+      }
       if (showing) element.append(el('span', 'deduct', `-${cardPoints(card)}`));
       element.tabIndex = 0;
       element.setAttribute('role', 'button');
@@ -539,7 +530,10 @@ export function createTable(controller: TableController, options: TableOptions):
     const actions = finished
       ? el('div', 'actions', restart, button('Menu', 'button secondary', options.onMenu))
       : el('div', 'actions', button(nextLabel, 'button primary', () => controller.nextHand(), Boolean(waiting?.voted)));
-    return el('div', 'modal-backdrop', el('div', 'modal', el('h2', '', title), resultRows(result), totals, actions));
+    const key = `${view.handNumber}:${view.phase}`;
+    const still = key === shownModal;
+    shownModal = key;
+    return el('div', `modal-backdrop${still ? ' still' : ''}`, el('div', `modal${still ? ' still' : ''}`, el('h2', '', title), resultRows(result), totals, actions));
   }
 
   function batedor(view: PlayerView): string | null {
@@ -551,9 +545,13 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   let detailsOpen = false;
+  let shownModal = '';
+  let shownToast: { text: string; until: number } | null = null;
   let lastActions = -1;
   let eventsBusyUntil = 0;
   let mortoArrivingUntil = 0;
+  let mortoBlockUntil = 0;
+  let blockReason = 'Aguarde o morto chegar.';
   let popHand = false;
 
   function center(rect: DOMRect): { x: number; y: number } {
@@ -661,8 +659,14 @@ export function createTable(controller: TableController, options: TableOptions):
         } else {
           mortoFlight(label, `seat-${entry.seat}`, 'morto');
         }
+        mortoBlockUntil = eventsBusyUntil;
+        blockReason = 'Aguarde o morto chegar.';
       } else if (entry.type === 'monteVazio') {
-        if (view.monteCount > 0) mortoFlight('O morto virou monte', 'monte', 'mortoMonte');
+        if (view.monteCount > 0) {
+          mortoFlight('O morto virou monte', 'monte', 'mortoMonte');
+          mortoBlockUntil = eventsBusyUntil;
+          blockReason = 'Aguarde o morto virar monte.';
+        }
         else banner('O monte acabou', 'Mão encerrada sem batida', 'neutral');
       } else if (entry.type === 'bater') {
         const team = teamOf(entry.seat);
@@ -831,8 +835,7 @@ export function createTable(controller: TableController, options: TableOptions):
   function paletteElement(): HTMLElement | null {
     const sandbox = controller.sandbox;
     if (!sandbox || !paletteOpen) return null;
-    const suits = ['espadas', 'copas', 'paus', 'ouros'] as const;
-    const rows = suits.map((suit) =>
+    const rows = SUIT_ORDER.map((suit) =>
       el(
         'div',
         'palette-row',
@@ -1144,6 +1147,7 @@ export function createTable(controller: TableController, options: TableOptions):
   function render(motion = true): void {
     if (disposed || drag) return;
     const view = controller.view();
+    trackPicked(view);
     const valid = new Set(view.hand.map((card) => card.id));
     for (const id of [...selection]) if (!valid.has(id)) selection.delete(id);
     if (view.phase !== 'comprar') choosingMeld = false;
@@ -1168,10 +1172,13 @@ export function createTable(controller: TableController, options: TableOptions):
       takeLixo(current);
     });
 
-    const toastElement = toast ? el('div', 'toast', toast.text) : null;
+    const toastElement = toast ? el('div', `toast${toast === shownToast ? ' still' : ''}`, toast.text) : null;
+    shownToast = toast;
     const palette = paletteElement();
     root.classList.toggle('with-palette', palette !== null);
-    root.replaceChildren(topBar(view), felt, dock, palette ?? '', toastElement ?? '', endModal(view) ?? '');
+    const modal = endModal(view);
+    if (!modal) shownModal = '';
+    root.replaceChildren(topBar(view), felt, dock, palette ?? '', toastElement ?? '', modal ?? '');
     fitHand();
     fitMelds();
     const plan = motionPlan(view);

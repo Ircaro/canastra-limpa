@@ -1,4 +1,6 @@
 import {
+  EVENT_PAUSE_MS,
+  animatedEvents,
   applyAction,
   arrangeSequence,
   botAction,
@@ -77,6 +79,8 @@ export class LocalMatch implements TableController {
   readonly sandbox?: Sandbox;
   private nextCardId = 10_000;
   private readonly history: GameState[] = [];
+  private seenActions = 0;
+  private pauseUntil = 0;
 
   constructor(seats: number, rules: RuleSet, private readonly pace = 1, practice = false) {
     this.state = createGame(practice ? 2 : seats, rules, randomSeed(), practice ? 0 : Math.floor(Math.random() * seats));
@@ -244,6 +248,9 @@ export class LocalMatch implements TableController {
   }
 
   private changed(): void {
+    const events = animatedEvents(this.state, this.state.actions - this.seenActions);
+    if (events > 0 && !this.sandbox) this.pauseUntil = Math.max(performance.now(), this.pauseUntil) + events * EVENT_PAUSE_MS;
+    this.seenActions = this.state.actions;
     for (const listener of this.listeners) listener();
     this.schedule();
   }
@@ -254,7 +261,7 @@ export class LocalMatch implements TableController {
     if ((phase !== 'comprar' && phase !== 'jogar') || !this.bots[turn]) return;
     const next = botAction(viewFor(this.state, turn), () => nextRandom(this.rng));
     if (!next) return;
-    const delay = this.pace * (next.type === 'descartar' ? DELAYS.descartar : phase === 'comprar' ? DELAYS.comprar : DELAYS.jogar);
+    const delay = Math.max(0, this.pauseUntil - performance.now()) + this.pace * (next.type === 'descartar' ? DELAYS.descartar : phase === 'comprar' ? DELAYS.comprar : DELAYS.jogar);
     this.timer = setTimeout(() => {
       this.timer = null;
       if (this.disposed || this.state.turn !== turn) return;

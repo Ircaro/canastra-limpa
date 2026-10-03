@@ -3,7 +3,7 @@ import { el } from './dom';
 
 const SYMBOLS: Record<Suit, string> = { espadas: '♠', copas: '♥', paus: '♣', ouros: '♦' };
 const SUIT_NAMES: Record<Suit, string> = { espadas: 'espadas', copas: 'copas', paus: 'paus', ouros: 'ouros' };
-const SUIT_ORDER: Suit[] = ['espadas', 'copas', 'paus', 'ouros'];
+export const SUIT_ORDER: Suit[] = ['copas', 'espadas', 'ouros', 'paus'];
 
 export function suitSymbol(suit: Suit | null): string {
   return suit ? SYMBOLS[suit] : '★';

@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import {
+  EVENT_PAUSE_MS,
+  animatedEvents,
   applyAction,
   botAction,
   createGame,
@@ -56,6 +58,8 @@ export class Room {
   private turnKey = '';
   private deadline: number | null = null;
   private turnTotal = TURN_MS;
+  private seenActions = 0;
+  private pauseUntil = 0;
   private mortoKey = '';
   private autoSeat: number | null = null;
   private lastHumanAt = now();
@@ -262,6 +266,8 @@ export class Room {
       return;
     }
     this.state = createGame(this.seats.length, this.rules, randomSeed(), Math.floor(Math.random() * this.seats.length));
+    this.seenActions = 0;
+    this.pauseUntil = 0;
     this.status = 'playing';
     this.autoSeat = null;
     this.turnKey = '';
@@ -312,6 +318,9 @@ export class Room {
   private changed(): void {
     const state = this.state;
     if (!state) return;
+    const events = animatedEvents(state, state.actions - this.seenActions);
+    if (events > 0) this.pauseUntil = Math.max(now(), this.pauseUntil) + events * EVENT_PAUSE_MS;
+    this.seenActions = state.actions;
     const key = `${state.hand}:${state.turn}:${state.phase}`;
     if (key !== this.turnKey) {
       this.turnKey = key;
@@ -343,7 +352,7 @@ export class Room {
       const view = viewFor(state, seat);
       const action = botAction(view, () => nextRandom(this.rng));
       if (!action) return;
-      const delay = BOT_PACE * (action.type === 'descartar' ? DELAYS.descartar : state.phase === 'comprar' ? DELAYS.comprar : DELAYS.jogar);
+      const delay = Math.max(0, this.pauseUntil - now()) + BOT_PACE * (action.type === 'descartar' ? DELAYS.descartar : state.phase === 'comprar' ? DELAYS.comprar : DELAYS.jogar);
       this.botTimer = setTimeout(() => {
         this.botTimer = null;
         if (this.state !== state || state.turn !== seat) return;

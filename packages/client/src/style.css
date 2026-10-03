@@ -987,6 +987,26 @@ body {
   background: rgba(255, 255, 255, 0.35);
 }
 
+.pick-mark {
+  position: absolute;
+  right: 8%;
+  bottom: 6%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.95),
+    0 0 6px rgba(242, 193, 78, 0.8);
+}
+
+.pick-mark.locked {
+  background: #e5484d;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.95),
+    0 0 6px rgba(229, 72, 77, 0.8);
+}
+
 .dock.morto-arriving .hand .card {
   opacity: 0;
 }
@@ -1799,6 +1819,12 @@ body {
 
 .modal-head h2 {
   margin: 0;
+}
+
+.modal.still,
+.modal-backdrop.still,
+.toast.still {
+  animation: none;
 }
 
 .rules-modal {

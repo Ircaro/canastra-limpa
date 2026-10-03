@@ -403,6 +403,13 @@ export function applyAction(state: GameState, seat: number, action: Action): Act
   return { ok: true };
 }
 
+export const EVENT_PAUSE_MS = 2300;
+
+export function animatedEvents(state: Pick<GameState, 'log' | 'monte'>, fresh: number): number {
+  if (fresh <= 0) return 0;
+  return state.log.slice(-Math.min(fresh, state.log.length)).filter((entry) => entry.type === 'morto' || (entry.type === 'monteVazio' && state.monte.length > 0)).length;
+}
+
 export function fallbackAction(state: GameState, seat: number): Action {
   if (state.phase === 'comprar') return { type: 'comprar' };
   const hand = state.hands[seat];
