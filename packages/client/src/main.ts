@@ -99,7 +99,7 @@ function homeScreen(): HTMLElement {
       button('Jogar contra bots', 'button primary big', () => show(setupScreen())),
       button('Modo teste', 'button secondary big', () => startMatch(true)),
       button('Jogar online', 'button secondary big', () => show(onlineScreen())),
-      lastRoom() ? button(`Voltar para a sala ${lastRoom()}`, 'button secondary big', () => resumeRoom(lastRoom() as string)) : null,
+      resumeRow(),
       button('Regras', 'button ghost big', () => openRules(config.rules)),
     ),
   );
@@ -446,6 +446,18 @@ function leaveOnline(): void {
   current = null;
   history.replaceState(null, '', location.pathname);
   show(homeScreen());
+}
+
+function resumeRow(): HTMLElement | null {
+  const room = lastRoom();
+  if (!room) return null;
+  const forget = button('×', 'button secondary big forget-room', () => {
+    rememberRoom(null);
+    row.remove();
+  });
+  forget.setAttribute('aria-label', `Esquecer a sala ${room}`);
+  const row = el('div', 'resume-row', button(`Voltar para a sala ${room}`, 'button secondary big', () => resumeRoom(room)), forget);
+  return row;
 }
 
 function resumeRoom(room: string): void {

@@ -118,6 +118,22 @@ body {
   width: min(100%, 360px);
 }
 
+.resume-row {
+  display: flex;
+  gap: 8px;
+}
+
+.resume-row > .button:first-child {
+  flex: 1;
+}
+
+.forget-room {
+  width: 56px;
+  padding-inline: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
 .panel {
   width: min(100%, 640px);
   padding: 26px 28px;
