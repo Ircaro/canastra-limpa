@@ -1015,17 +1015,11 @@ body {
 }
 
 .hand .card.picked {
-  box-shadow:
-    0 0 0 2px #ffd978,
-    0 0 14px 2px rgba(255, 217, 120, 0.7),
-    0 1px 3px rgba(0, 0, 0, 0.28);
+  background: #dcefff;
 }
 
 .hand .card.picked.locked {
-  box-shadow:
-    0 0 0 2px #ff6b6b,
-    0 0 14px 2px rgba(255, 107, 107, 0.7),
-    0 1px 3px rgba(0, 0, 0, 0.28);
+  background: #ffdede;
 }
 
 .dock.morto-arriving .hand .card {
