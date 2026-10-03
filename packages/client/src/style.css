@@ -1569,11 +1569,11 @@ body {
   bottom: 0;
   display: grid;
   place-items: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 6px;
-  border-radius: 7px;
-  font-size: 0.85rem;
+  min-width: clamp(14px, calc(var(--meld-w) * 0.4), 24px);
+  height: clamp(14px, calc(var(--meld-w) * 0.4), 24px);
+  padding: 0 clamp(3px, calc(var(--meld-w) * 0.1), 6px);
+  border-radius: clamp(4px, calc(var(--meld-w) * 0.11), 7px);
+  font-size: clamp(0.58rem, calc(var(--meld-w) * 0.24), 0.85rem);
   font-weight: 700;
   color: #ffffff;
   background: #1c8a4a;
@@ -1660,6 +1660,19 @@ body {
 
 .lixo-cards .card {
   grid-area: 1 / 1;
+}
+
+.lixo-wrap.piled {
+  margin: 0 0 6px 6px;
+}
+
+.lixo-wrap.piled .lixo-cards .card {
+  box-shadow:
+    -2px 2px 0 #ffffff,
+    -3px 3px 0 #b9c0c7,
+    -5px 5px 0 #ffffff,
+    -6px 6px 0 #b9c0c7,
+    0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
 .lixo-cards.open {

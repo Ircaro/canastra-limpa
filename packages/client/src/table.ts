@@ -1,4 +1,4 @@
-import { isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
+import { explainSequence, isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
 import { play, snapshot, stopAnimations } from './animate';
 import { SUIT_ORDER, cardBack, cardElement, sortHand, type SortMode } from './cards';
 import { button, el } from './dom';
@@ -157,12 +157,25 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function baixar(ids: number[]): void {
-    if (!playing(controller.view())) return;
+    const view = controller.view();
+    if (!playing(view)) return;
     if (ids.length < 3) {
       notify('Um jogo precisa de pelo menos 3 cartas.');
       return;
     }
+    const hint = wildHint(view, cardsOf(view, ids));
+    if (hint) {
+      notify(hint);
+      return;
+    }
     perform({ type: 'baixar', cards: ids });
+  }
+
+  function wildHint(view: PlayerView, cards: readonly Card[]): string | null {
+    if (cards.length < 2 || arrangeSequence(cards)) return null;
+    const spare = view.hand.find((card) => isWild(card) && !cards.some((item) => item.id === card.id));
+    if (!spare || !arrangeSequence([...cards, spare])) return null;
+    return `Faltou selecionar o ${spare.rank === 2 ? '2' : 'coringa'}: ele entra no lugar da carta que falta.`;
   }
 
   function descartar(ids: number[]): void {
@@ -225,6 +238,10 @@ export function createTable(controller: TableController, options: TableOptions):
       notify('O lixo está vazio.');
       return;
     }
+    if (view.rules.lixo === 'fechado' && myTurn(view) && view.phase === 'comprar') {
+      takeLixo(view);
+      return;
+    }
     lixoOpen = !lixoOpen;
     sound.play(lixoOpen ? 'select' : 'deselect');
     render();
@@ -237,7 +254,12 @@ export function createTable(controller: TableController, options: TableOptions):
     }
     const cards = [...selection];
     if (cards.length >= 2) {
-      perform({ type: 'pegarLixo', cards });
+      const top = view.lixo[view.lixo.length - 1];
+      const chosen = cardsOf(view, cards);
+      const hint = top ? wildHint(view, [top, ...chosen]) : null;
+      if (hint) notify(hint);
+      else if (top && !arrangeSequence([top, ...chosen])) notify(`Lixo fechado: a carta de cima precisa formar jogo com as cartas selecionadas. ${explainSequence([top, ...chosen])}`);
+      else perform({ type: 'pegarLixo', cards });
       return;
     }
     const top = view.lixo[view.lixo.length - 1];
@@ -248,7 +270,7 @@ export function createTable(controller: TableController, options: TableOptions):
       choosingMeld = true;
       lixoOpen = false;
       notify('Escolha o jogo onde a carta de cima do lixo vai entrar.', false);
-    } else notify('No lixo fechado, selecione as cartas da mão que formam jogo com a carta de cima.');
+    } else notify('Lixo fechado: para pegar, a carta de cima precisa entrar num jogo. Selecione na mão as cartas que fazem jogo com ela, ou toque num jogo seu em que ela caiba.');
   }
 
   function clickMeld(view: PlayerView, meld: Meld): void {
@@ -422,13 +444,14 @@ export function createTable(controller: TableController, options: TableOptions):
     const drawing = myTurn(view) && view.phase === 'comprar';
     const discarding = playing(view) && selection.size === 1;
     const monte = pile('Monte', view.monteCount === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack', cardBack(), cardBack()), plural(view.monteCount, 'carta', 'cartas'), () => clickMonte(controller.view()), drawing);
-    const lixoCards = view.lixo.map((card, index) => {
-      const element = cardElement(card);
-      const depth = Math.min(view.lixo.length - 1 - index, 5);
-      if (!lixoOpen && depth > 0) element.style.transform = `translate(${-depth * 2}px, ${depth * 2}px)`;
-      return element;
-    });
-    const lixoContent = view.lixo.length === 0 ? el('div', 'card empty', 'vazio') : el('div', 'lixo-wrap', el('div', `lixo-cards${lixoOpen ? ' open' : ''}`, ...lixoCards));
+    const closed = view.rules.lixo === 'fechado';
+    const visible = closed ? view.lixo.slice(-1) : view.lixo;
+    const lixoCards = visible.map((card) => cardElement(card));
+    const expanded = lixoOpen && !closed;
+    const lixoContent =
+      view.lixo.length === 0
+        ? el('div', 'card empty', 'vazio')
+        : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? ' piled' : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
     const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen);
     const mortos = pile('Mortos', el('div', 'stack mortos', ...Array.from({ length: view.mortosLeft }, () => cardBack())), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false);
     return el('section', 'center', monte, lixo, mortos);
