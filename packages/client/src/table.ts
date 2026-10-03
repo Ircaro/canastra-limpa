@@ -785,9 +785,14 @@ export function createTable(controller: TableController, options: TableOptions):
           blockReason = 'Aguarde o morto virar monte.';
         }
         else banner('O monte acabou', 'Mão encerrada sem batida', 'neutral');
-      } else if (entry.type === 'pegarLixo' && entry.seat === me) {
-        mortoBlockUntil = Math.max(mortoBlockUntil, performance.now() + lixoPause(entry.count));
-        blockReason = '';
+      } else if (entry.type === 'pegarLixo' && view.rules.lixo === 'fechado') {
+        if (entry.seat === me) {
+          mortoBlockUntil = Math.max(mortoBlockUntil, performance.now() + lixoPause(entry.count));
+          blockReason = '';
+        } else {
+          const pile = root.querySelector<HTMLElement>('[data-anchor="lixo"]');
+          if (pile) floatText(pile, `${controller.names[entry.seat]} pegou o lixo`, `big lixo-taken ${teamOf(entry.seat) === myTeam ? 'us' : 'them'}`, 80);
+        }
       } else if (entry.type === 'bater') {
         const team = teamOf(entry.seat);
         const title = entry.seat === me ? 'Você bateu!' : `${controller.names[entry.seat]} bateu!`;

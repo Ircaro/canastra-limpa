@@ -2605,3 +2605,7 @@ body {
     --meld-w: calc(min(var(--card-w) * 0.9, 6.4dvh) * var(--meld-scale, 1));
   }
 }
+
+.float-points.big.lixo-taken {
+  font-size: 1.15rem;
+}
