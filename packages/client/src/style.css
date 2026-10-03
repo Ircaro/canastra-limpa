@@ -696,7 +696,7 @@ body {
   animation: rainbow-slide 4s linear infinite;
 }
 
-.melds.compact .meld.long .meld-cards .card + .card:not(:last-child) {
+.melds.compact .meld.long .meld-cards .card.squeeze {
   margin-left: calc(var(--card-w) * -0.8);
 }
 

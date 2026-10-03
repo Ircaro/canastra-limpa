@@ -312,7 +312,15 @@ export function createTable(controller: TableController, options: TableOptions):
 
   function meldElement(view: PlayerView, meld: Meld): HTMLElement {
     const ours = meld.team === myTeam;
-    const cards = el('div', 'meld-cards', ...meld.cards.map((card) => cardElement(card)));
+    const cards = el(
+      'div',
+      'meld-cards',
+      ...meld.cards.map((card, index, all) => {
+        const element = cardElement(card);
+        if (index >= 2 && index < all.length - 1 && all[index - 1].id !== meld.wild) element.classList.add('squeeze');
+        return element;
+      }),
+    );
     const canastra = meld.cards.length >= CANASTRA_SIZE;
     const special = canastraKind(meld.cards, meld.wild);
     const kind = canastra ? (meld.wild === null ? 'limpa' : 'suja') : '';
