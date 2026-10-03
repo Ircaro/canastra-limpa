@@ -969,26 +969,6 @@ body {
   visibility: hidden;
 }
 
-.action-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 46px;
-}
-
-.action-bar .button {
-  min-height: 42px;
-  padding: 8px 14px;
-  font-size: 0.95rem;
-}
-
-.action-wait {
-  color: var(--muted);
-  font-weight: 600;
-}
-
 .hand.rows {
   display: grid;
   grid-template-columns: repeat(var(--per-row), var(--step));
@@ -1019,12 +999,6 @@ body {
   gap: 8px;
 }
 
-@media (hover: hover) and (pointer: fine) and (min-width: 901px) {
-  .action-bar {
-    display: none;
-  }
-}
-
 @media (max-width: 400px) {
   .details-toggle {
     display: none;
@@ -1038,14 +1012,6 @@ body {
     font-size: 1rem;
   }
 
-  .action-bar {
-    gap: 6px;
-  }
-
-  .action-bar .button {
-    padding: 8px 10px;
-    font-size: 0.85rem;
-  }
 }
 
 
@@ -2149,13 +2115,7 @@ body {
   }
 
   .felt {
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  .felt > .melds {
-    min-height: auto;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .dock {
@@ -2175,46 +2135,63 @@ body {
     max-height: 55dvh;
   }
 
-  .felt {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: none;
+  :root {
+    --pile-w: 34px;
+  }
+
+  .felt,
+  .felt.seats-2 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
-      'left top right'
-      'theirs theirs theirs'
-      'center center center'
-      'ours ours ours';
-    border-width: 6px;
-    padding: 8px;
-    border-radius: 18px;
-  }
-
-  .seat {
+      'left top right center'
+      'theirs theirs theirs center'
+      'ours ours ours center';
+    gap: 6px;
+    border-width: 5px;
     padding: 6px;
+    border-radius: 16px;
   }
 
+  .felt.seats-2 {
+    grid-template-areas:
+      'top top top center'
+      'theirs theirs theirs center'
+      'ours ours ours center';
+  }
+
+  .seat,
   .seat-top {
     grid-auto-flow: row;
     justify-self: stretch;
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .seat-count {
+    font-size: 0.72rem;
+  }
+
+  .seat .tag {
+    font-size: 0.6rem;
+    padding: 0 5px;
   }
 
   .seat .backs {
     display: none !important;
   }
 
-  .felt.seats-2 {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'top'
-      'theirs'
-      'center'
-      'ours';
+  .melds {
+    padding: 6px;
   }
 
   .lixo-cards.open {
+    position: fixed;
     right: auto;
     left: 50%;
-    top: calc(100% + 30px);
-    translate: -50% 0;
+    top: 45%;
+    translate: -50% -50%;
+    z-index: 40;
     flex-wrap: wrap;
     justify-content: center;
     width: min(92vw, 420px);
@@ -2222,9 +2199,22 @@ body {
   }
 
   .center {
-    flex-direction: row;
-    flex-wrap: wrap;
-    background: none;
+    justify-content: space-evenly;
+    gap: 0;
+    padding: 4px 2px;
+  }
+
+  .pile {
+    padding: 4px;
+    gap: 2px;
+  }
+
+  .pile-label {
+    font-size: 0.75rem;
+  }
+
+  .pile-count {
+    font-size: 0.66rem;
   }
 
   .status {
@@ -2475,27 +2465,7 @@ body {
   }
 
   .dock {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    gap: 8px;
     padding: 4px 8px;
-  }
-
-  .dock > .turn-bar {
-    grid-column: 1 / -1;
-  }
-
-  .action-bar {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    min-height: 0;
-    gap: 4px;
-  }
-
-  .action-bar .button {
-    min-height: 32px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
   }
 
   .hand {

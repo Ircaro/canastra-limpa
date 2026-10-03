@@ -196,33 +196,6 @@ export function createTable(controller: TableController, options: TableOptions):
     }
   }
 
-  function actionBar(view: PlayerView): HTMLElement {
-    const bar = el('div', 'action-bar');
-    if (view.phase !== 'comprar' && view.phase !== 'jogar') return bar;
-    if (!myTurn(view)) {
-      bar.append(el('span', 'action-wait', `Vez de ${controller.names[view.turn]}`));
-      return bar;
-    }
-    if (view.phase === 'comprar') {
-      bar.append(
-        button('Comprar do monte', 'button primary', () => clickMonte(controller.view())),
-        button(view.lixo.length > 0 ? `Pegar o lixo (${view.lixo.length})` : 'Lixo vazio', 'button secondary', () => takeLixo(controller.view()), view.lixo.length === 0),
-      );
-      return bar;
-    }
-    const selected = cardsOf(view, selection);
-    const fits = view.melds.filter((meld) => meld.team === myTeam && fitsMeld(meld, selected));
-    bar.append(
-      button('Baixar jogo', 'button primary', () => baixar([...selection]), !formsMeld(selected)),
-      button('Acrescentar', 'button secondary', () => {
-        if (fits.length === 1) perform({ type: 'adicionar', meld: fits[0].id, cards: [...selection] });
-        else notify('Toque no jogo onde as cartas vão entrar.', false);
-      }, fits.length === 0),
-      button('Descartar', 'button secondary', () => descartar([...selection]), selection.size !== 1),
-    );
-    return bar;
-  }
-
   function clickMonte(view: PlayerView): void {
     if (!myTurn(view)) {
       notify('Aguarde a sua vez.');
@@ -1175,12 +1148,12 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function fitMelds(): void {
-    const constrained = window.innerWidth > 760;
+    const narrow = window.innerWidth <= NARROW_PX;
+    const floor = narrow ? 0.5 : 0.62;
     for (const zone of root.querySelectorAll<HTMLElement>('.melds')) {
       let scale = 1;
       zone.style.setProperty('--meld-scale', '1');
-      if (!constrained) continue;
-      while (zone.scrollHeight > zone.clientHeight + 1 && scale > 0.62) {
+      while (zone.scrollHeight > zone.clientHeight + 1 && scale > floor) {
         scale = Math.round((scale - 0.06) * 100) / 100;
         zone.style.setProperty('--meld-scale', String(scale));
       }
@@ -1286,7 +1259,6 @@ export function createTable(controller: TableController, options: TableOptions):
     const dock = el(
       'div',
       `dock${myTurn(view) ? ' active' : ''}${canTakeLixo(view) ? ' take-lixo' : ''}${performance.now() < mortoArrivingUntil ? ' morto-arriving' : ''}`,
-      actionBar(view),
       handElement(view),
     );
     if (controller.turnTimer !== undefined) dock.prepend(myTurn(view) && controller.turnTimer ? timerBar(controller.turnTimer) : el('div', 'turn-bar idle'));
