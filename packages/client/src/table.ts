@@ -64,6 +64,9 @@ const ACTION_SOUNDS: Partial<Record<LastAction['type'], SoundName>> = {
 };
 
 const EVENT_MS = 2100;
+const NARROW_PX = 760;
+const MIN_VISIBLE = 0.5;
+const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
 const CENTER_PHASE_MS = 1150;
 const SPREAD_CARD_MS = 480;
 const SPREAD_STAGGER_MS = 42;
@@ -191,6 +194,33 @@ export function createTable(controller: TableController, options: TableOptions):
       const who = seat === me ? 'Você' : seat !== null ? controller.names[seat] : team === myTeam ? 'Sua dupla' : 'A outra dupla';
       notify(`${who} não abriu com ${previous[team]}: os jogos voltaram para a mão. Agora a abertura é ${view.minimo[team]}.`);
     }
+  }
+
+  function actionBar(view: PlayerView): HTMLElement {
+    const bar = el('div', 'action-bar');
+    if (view.phase !== 'comprar' && view.phase !== 'jogar') return bar;
+    if (!myTurn(view)) {
+      bar.append(el('span', 'action-wait', `Vez de ${controller.names[view.turn]}`));
+      return bar;
+    }
+    if (view.phase === 'comprar') {
+      bar.append(
+        button('Comprar do monte', 'button primary', () => clickMonte(controller.view())),
+        button(view.lixo.length > 0 ? `Pegar o lixo (${view.lixo.length})` : 'Lixo vazio', 'button secondary', () => takeLixo(controller.view()), view.lixo.length === 0),
+      );
+      return bar;
+    }
+    const selected = cardsOf(view, selection);
+    const fits = view.melds.filter((meld) => meld.team === myTeam && fitsMeld(meld, selected));
+    bar.append(
+      button('Baixar jogo', 'button primary', () => baixar([...selection]), !formsMeld(selected)),
+      button('Acrescentar', 'button secondary', () => {
+        if (fits.length === 1) perform({ type: 'adicionar', meld: fits[0].id, cards: [...selection] });
+        else notify('Toque no jogo onde as cartas vão entrar.', false);
+      }, fits.length === 0),
+      button('Descartar', 'button secondary', () => descartar([...selection]), selection.size !== 1),
+    );
+    return bar;
   }
 
   function clickMonte(view: PlayerView): void {
@@ -781,6 +811,17 @@ export function createTable(controller: TableController, options: TableOptions):
     );
   }
 
+  function scoresElement(us: HTMLElement, them: HTMLElement, toggle: HTMLElement, details: HTMLElement | null): HTMLElement {
+    const element = el('div', 'scores', us, el('span', 'versus', '×'), them, toggle, details);
+    for (const target of [us, them]) {
+      target.addEventListener('click', () => {
+        detailsOpen = !detailsOpen;
+        render(false);
+      });
+    }
+    return element;
+  }
+
   function topBar(view: PlayerView): HTMLElement {
     const score = (team: number) => {
       const mesa = view.phase === 'comprar' || view.phase === 'jogar' ? tablePoints(view.melds, team) : 0;
@@ -794,12 +835,14 @@ export function createTable(controller: TableController, options: TableOptions):
     });
     toggle.setAttribute('aria-label', 'Ver o detalhe dos pontos');
     toggle.setAttribute('aria-expanded', String(detailsOpen));
-    const details = detailsOpen ? el('div', 'details-panel', breakdown(view, myTeam), breakdown(view, 1 - myTeam)) : null;
+    const details = detailsOpen
+      ? el('div', 'details-panel', el('p', 'details-meta', view.rules.meta === 0 ? metaLabel(0) : `Mão ${view.handNumber} · meta ${view.rules.meta}`), breakdown(view, myTeam), breakdown(view, 1 - myTeam))
+      : null;
     return el(
       'header',
       'bar',
       button('Menu', 'button ghost small', options.onMenu),
-      el('div', 'scores', score(myTeam), el('span', 'versus', '×'), score(1 - myTeam), toggle, details),
+      scoresElement(score(myTeam), score(1 - myTeam), toggle, details),
       el('span', 'bar-info', view.rules.meta === 0 ? metaLabel(0) : `Mão ${view.handNumber} · meta ${view.rules.meta}`),
       controller.latency !== undefined ? pingBadge(() => controller.latency) : null,
       controller.sandbox ? button('Voltar jogada', 'button ghost small', () => controller.sandbox?.undo(), !controller.sandbox.canUndo()) : null,
@@ -923,17 +966,20 @@ export function createTable(controller: TableController, options: TableOptions):
     joker.setAttribute('role', 'button');
     joker.addEventListener('click', () => pick(0, null));
     const titles = { mao: 'colocar na sua mão', lixo: 'o oponente descarta no lixo', nos: 'montar um jogo da sua dupla', eles: 'montar um jogo da outra dupla' };
-    return el('div', 'palette', el('p', 'palette-title', `Modo teste: toque numa carta para ${titles[paletteTarget]}. O × tira um jogo da mesa.`), ...paletteTools(sandbox), ...rows, el('div', 'palette-row', joker));
+    const head = el('div', 'palette-head', el('p', 'palette-title', `Modo teste: toque numa carta para ${titles[paletteTarget]}. O × tira um jogo da mesa.`), button('Fechar', 'button ghost small', togglePalette));
+    return el('div', 'palette', head, ...paletteTools(sandbox), ...rows, el('div', 'palette-row', joker));
   }
 
   function soundButton(): HTMLButtonElement {
-    const element = button(sound.enabled ? 'Som ligado' : 'Som desligado', 'button ghost small', () => {
+    const label = () => [el('span', 'label-long', sound.enabled ? 'Som ligado' : 'Som desligado'), el('span', 'label-short', sound.enabled ? 'Som' : 'Mudo')];
+    const element = button('', 'button ghost small', () => {
       sound.toggle();
       sound.unlock();
       sound.play('select');
-      element.textContent = sound.enabled ? 'Som ligado' : 'Som desligado';
+      element.replaceChildren(...label());
       element.setAttribute('aria-pressed', String(sound.enabled));
     });
+    element.replaceChildren(...label());
     element.setAttribute('aria-pressed', String(sound.enabled));
     return element;
   }
@@ -1149,7 +1195,17 @@ export function createTable(controller: TableController, options: TableOptions):
     const width = cards[0].getBoundingClientRect().width;
     const available = hand.clientWidth - 8;
     const overlap = Math.min(6, (available - width * cards.length) / (cards.length - 1));
-    hand.style.setProperty('--gap', `${Math.max(overlap, -width * 0.72)}px`);
+    const rows = window.innerWidth <= NARROW_PX && cards.length > 8 && width + overlap < width * MIN_VISIBLE;
+    hand.classList.toggle('rows', rows);
+    if (!rows) {
+      hand.style.setProperty('--gap', `${Math.max(overlap, -width * 0.72)}px`);
+      return;
+    }
+    const perRow = Math.ceil(cards.length / 2);
+    const step = Math.min(width + 6, (available - width) / (perRow - 1));
+    hand.style.setProperty('--per-row', String(perRow));
+    hand.style.setProperty('--step', `${step}px`);
+    hand.style.setProperty('--spill', `${Math.max(0, width - step)}px`);
   }
 
   let lastLogKey = '';
@@ -1230,6 +1286,7 @@ export function createTable(controller: TableController, options: TableOptions):
     const dock = el(
       'div',
       `dock${myTurn(view) ? ' active' : ''}${canTakeLixo(view) ? ' take-lixo' : ''}${performance.now() < mortoArrivingUntil ? ' morto-arriving' : ''}`,
+      actionBar(view),
       handElement(view),
     );
     if (controller.turnTimer !== undefined) dock.prepend(myTurn(view) && controller.turnTimer ? timerBar(controller.turnTimer) : el('div', 'turn-bar idle'));
@@ -1246,7 +1303,12 @@ export function createTable(controller: TableController, options: TableOptions):
     root.classList.toggle('with-palette', palette !== null);
     const modal = endModal(view);
     if (!modal) shownModal = '';
+    const scrolls = SCROLL_KEEP.map((selector) => root.querySelector<HTMLElement>(selector)?.scrollTop ?? 0);
     root.replaceChildren(topBar(view), felt, dock, palette ?? '', toastElement ?? '', modal ?? '');
+    SCROLL_KEEP.forEach((selector, index) => {
+      const element = root.querySelector<HTMLElement>(selector);
+      if (element && scrolls[index]) element.scrollTop = scrolls[index];
+    });
     fitHand();
     fitMelds();
     const plan = motionPlan(view);
