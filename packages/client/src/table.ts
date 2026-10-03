@@ -66,7 +66,6 @@ const ACTION_SOUNDS: Partial<Record<LastAction['type'], SoundName>> = {
 const EVENT_MS = 2100;
 const NARROW_PX = 760;
 const MIN_VISIBLE = 0.5;
-const MIN_ZONE_PX = 90;
 const LONG_MELD = 4;
 const SHORT_PX = 520;
 const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
@@ -1177,17 +1176,6 @@ export function createTable(controller: TableController, options: TableOptions):
   function fitMelds(): void {
     const narrow = window.innerWidth <= NARROW_PX;
     const floor = narrow && window.innerHeight > SHORT_PX ? 1 : window.innerHeight <= SHORT_PX ? 0.42 : 0.62;
-    const felt = root.querySelector<HTMLElement>('.felt');
-    const zones = ['.melds.theirs', '.melds.ours'].map((selector) => root.querySelector<HTMLElement>(selector));
-    for (const zone of zones) {
-      zone?.style.setProperty('--meld-scale', '1');
-      zone?.classList.remove('compact');
-    }
-    if (felt) {
-      felt.style.gridTemplateRows = '';
-      const needs = zones.map((zone) => (zone ? Math.max(MIN_ZONE_PX, [...zone.children].reduce((sum, child) => sum + (child as HTMLElement).offsetHeight, 0) + 24) : MIN_ZONE_PX));
-      felt.style.gridTemplateRows = `auto minmax(0, ${needs[0]}fr) minmax(0, ${needs[1]}fr)`;
-    }
     for (const zone of root.querySelectorAll<HTMLElement>('.melds')) {
       let scale = 1;
       zone.style.setProperty('--meld-scale', '1');
