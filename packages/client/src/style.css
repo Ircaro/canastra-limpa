@@ -1072,10 +1072,9 @@ body {
 }
 
 .pile .lixo-cards .card.selected {
-  translate: 0 -8px;
   box-shadow:
     0 0 0 3px var(--gold),
-    0 8px 16px rgba(0, 0, 0, 0.35);
+    0 0 14px rgba(242, 193, 78, 0.6);
 }
 
 .dock.morto-arriving .hand .card {
@@ -1681,14 +1680,14 @@ body {
 }
 
 
-.lixo-wrap.piled-two .lixo-cards .card {
+.lixo-wrap.piled-two .lixo-cards .card:first-child {
   box-shadow:
     -3px 3px 0 #ffffff,
     -4px 4px 0 #b9c0c7,
     0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
-.lixo-wrap.piled .lixo-cards .card {
+.lixo-wrap.piled .lixo-cards .card:first-child {
   box-shadow:
     -2px 2px 0 #ffffff,
     -3px 3px 0 #b9c0c7,
