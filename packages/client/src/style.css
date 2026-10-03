@@ -2599,3 +2599,9 @@ body {
     --meld-w: calc(var(--card-w) * 0.68);
   }
 }
+
+@media (min-width: 761px) and (min-height: 521px) {
+  .melds {
+    --meld-w: calc(min(var(--card-w) * 0.9, 6.4dvh) * var(--meld-scale, 1));
+  }
+}

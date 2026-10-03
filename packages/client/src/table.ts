@@ -1178,8 +1178,7 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function fitMelds(): void {
-    const narrow = window.innerWidth <= NARROW_PX;
-    const floor = narrow && window.innerHeight > SHORT_PX ? 1 : window.innerHeight <= SHORT_PX ? 0.42 : 0.62;
+    const floor = window.innerHeight <= SHORT_PX ? 0.42 : 1;
     for (const zone of root.querySelectorAll<HTMLElement>('.melds')) {
       let scale = 1;
       zone.style.setProperty('--meld-scale', '1');
