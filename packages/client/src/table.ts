@@ -889,7 +889,15 @@ export function createTable(controller: TableController, options: TableOptions):
       }, selection.size === 0),
       button('Esvaziar lixo', 'button ghost small', () => sandbox.clearLixo(), controller.view().lixo.length === 0),
     );
-    return [switcher, ...(draftRow ? [draftRow] : []), extras];
+    const simulate = el(
+      'div',
+      'palette-actions',
+      el('span', 'palette-label', 'Simular:'),
+      button('Eu pego o morto', 'button ghost small', () => sandbox.mortoDemo('eu')),
+      button('Oponente pega o morto', 'button ghost small', () => sandbox.mortoDemo('oponente')),
+      button('Morto vira monte', 'button ghost small', () => sandbox.mortoDemo('monte')),
+    );
+    return [switcher, ...(draftRow ? [draftRow] : []), extras, simulate];
   }
 
   function paletteElement(): HTMLElement | null {

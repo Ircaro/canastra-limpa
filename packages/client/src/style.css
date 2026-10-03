@@ -1173,6 +1173,12 @@ body {
   gap: 4px;
 }
 
+.palette-label {
+  align-self: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 .palette-draft {
   display: grid;
   gap: 6px;

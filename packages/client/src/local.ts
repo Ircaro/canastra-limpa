@@ -43,9 +43,11 @@ export interface Sandbox {
   canUndo(): boolean;
   revealDemo(): void;
   toggleVulnerable(): void;
+  mortoDemo(kind: 'eu' | 'oponente' | 'monte'): void;
 }
 
 const UNDO_LIMIT = 80;
+const MORTO_CARDS = 11;
 
 export interface TableController {
   readonly seat: number;
@@ -136,6 +138,22 @@ export class LocalMatch implements TableController {
           finishHand(this.state, null);
           this.changed();
         },
+        mortoDemo: (kind) => {
+          this.save();
+          const state = this.state;
+          const morto = state.mortos.pop() ?? this.randomCards(MORTO_CARDS);
+          if (kind === 'monte') {
+            state.monte = [...morto, ...state.monte];
+            this.note({ seat: null, type: 'monteVazio' });
+          } else {
+            const seat = kind === 'eu' ? this.seat : 1;
+            state.hands[seat] = morto;
+            state.mortoTaken[seat] = true;
+            state.mortoCount[seat]++;
+            this.note({ seat, type: 'morto' });
+          }
+          this.changed();
+        },
         toggleVulnerable: () => {
           this.save();
           const state = this.state;
@@ -149,6 +167,11 @@ export class LocalMatch implements TableController {
       };
     }
     this.schedule();
+  }
+
+  private randomCards(count: number): Card[] {
+    const suits = ['espadas', 'copas', 'paus', 'ouros'] as const;
+    return Array.from({ length: count }, () => this.makeCard(1 + Math.floor(nextRandom(this.rng) * 13), suits[Math.floor(nextRandom(this.rng) * 4)]));
   }
 
   private makeCard(rank: number, suit: Suit | null): Card {
