@@ -67,7 +67,7 @@ const EVENT_MS = 2100;
 const NARROW_PX = 760;
 const MIN_VISIBLE = 0.5;
 const MIN_ZONE_PX = 90;
-const LONG_MELD = 5;
+const LONG_MELD = 4;
 const SHORT_PX = 520;
 const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
 const CENTER_PHASE_MS = 1150;
@@ -285,7 +285,7 @@ export function createTable(controller: TableController, options: TableOptions):
       }
     }
     if (!myTurn(view) || meld.team !== myTeam) return;
-    if (choosingMeld && view.phase === 'comprar') {
+    if (view.phase === 'comprar' && (choosingMeld || (view.rules.lixo === 'fechado' && view.lixo.length > 0))) {
       perform({ type: 'pegarLixo', meld: meld.id, cards: [...selection] });
       return;
     }
@@ -374,7 +374,7 @@ export function createTable(controller: TableController, options: TableOptions):
     const selected = cardsOf(view, selection);
     const clickable =
       ours &&
-      ((playing(view) && fitsMeld(meld, selected)) || (choosingMeld && view.phase === 'comprar' && top !== undefined && fitsMeld(meld, [top, ...selected])));
+      ((playing(view) && fitsMeld(meld, selected)) || ((choosingMeld || view.rules.lixo === 'fechado') && myTurn(view) && view.phase === 'comprar' && top !== undefined && fitsMeld(meld, [top, ...selected])));
     if (clickable) {
       element.classList.add('target');
       element.tabIndex = 0;
@@ -1196,7 +1196,7 @@ export function createTable(controller: TableController, options: TableOptions):
 
   function fitMelds(): void {
     const narrow = window.innerWidth <= NARROW_PX;
-    const floor = narrow || window.innerHeight <= SHORT_PX ? 0.42 : 0.62;
+    const floor = narrow && window.innerHeight > SHORT_PX ? 1 : window.innerHeight <= SHORT_PX ? 0.42 : 0.62;
     const felt = root.querySelector<HTMLElement>('.felt');
     const zones = ['.melds.theirs', '.melds.ours'].map((selector) => root.querySelector<HTMLElement>(selector));
     for (const zone of zones) {

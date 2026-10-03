@@ -2183,7 +2183,7 @@ body {
   }
 
   :root {
-    --pile-w: 34px;
+    --pile-w: 26px;
   }
 
   .felt,
@@ -2192,8 +2192,8 @@ body {
     grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
       'left top right center'
-      'theirs theirs theirs center'
-      'ours ours ours center';
+      'theirs theirs theirs theirs'
+      'ours ours ours ours';
     gap: 6px;
     border-width: 5px;
     padding: 6px;
@@ -2203,8 +2203,33 @@ body {
   .felt.seats-2 {
     grid-template-areas:
       'top top top center'
-      'theirs theirs theirs center'
-      'ours ours ours center';
+      'theirs theirs theirs theirs'
+      'ours ours ours ours';
+  }
+
+  .melds {
+    --meld-w: calc(var(--card-w) * 0.76);
+  }
+
+  .meld-list {
+    gap: 6px 8px;
+  }
+
+  .meld {
+    padding: 2px 6px 6px 2px;
+  }
+
+  .meld.canastra {
+    padding-bottom: 9px;
+  }
+
+  .seat .seat-tags,
+  .seat .revealed {
+    display: none;
+  }
+
+  .seat-name {
+    font-size: 0.85rem;
   }
 
   .seat,
@@ -2246,22 +2271,29 @@ body {
   }
 
   .center {
-    justify-content: space-evenly;
-    gap: 0;
-    padding: 4px 2px;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px;
+    background: none;
   }
 
   .pile {
-    padding: 4px;
-    gap: 2px;
+    padding: 2px 3px;
+    gap: 1px;
   }
 
   .pile-label {
-    font-size: 0.75rem;
+    font-size: 0.62rem;
   }
 
   .pile-count {
-    font-size: 0.66rem;
+    font-size: 0.56rem;
+  }
+
+  .lixo-wrap {
+    margin: 0 0 3px 3px;
   }
 
   .status {
@@ -2536,5 +2568,11 @@ body {
 
   .hand {
     padding-top: 8px;
+  }
+}
+
+@media (max-width: 440px) {
+  .melds {
+    --meld-w: calc(var(--card-w) * 0.68);
   }
 }
