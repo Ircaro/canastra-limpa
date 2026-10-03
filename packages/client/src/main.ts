@@ -7,6 +7,7 @@ import { cardElement } from './cards';
 import { button, el } from './dom';
 import { LocalMatch, type TableController } from './local';
 import { OnlineMatch, OnlineSession, saveName, savedName, type RoomInfo } from './online';
+import { pingBadge } from './ping';
 import { startPresence } from './presence';
 import { rulesContent } from './rules-text';
 import { createTable, type TableUi } from './table';
@@ -364,7 +365,7 @@ function lobbyScreen(info: RoomInfo): HTMLElement {
   const panel = el(
     'div',
     'panel setup lobby',
-    el('h2', '', `Sala ${info.room}`),
+    el('div', 'lobby-head', el('h2', '', `Sala ${info.room}`), pingBadge(() => current.latency)),
     el('p', 'muted', rulesSummary(info.rules)),
     el('div', 'join-row', link, copy),
     el('ul', 'lobby-seats', ...rows),
