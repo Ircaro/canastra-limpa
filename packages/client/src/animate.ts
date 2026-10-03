@@ -18,6 +18,7 @@ export interface MotionPlan {
 }
 
 const MAX_VANISH = 14;
+const SNAP_PX = 8;
 const SEAT_CARD_PX = 22;
 const DURATION = 460;
 const EASING = 'cubic-bezier(0.25, 0.8, 0.25, 1)';
@@ -132,7 +133,7 @@ function arc(dx: number, dy: number): string {
 
 function flyFrom(element: HTMLElement, from: DOMRect, to: DOMRect, delay: number, faceDown: boolean): void {
   const move = travel(from, to);
-  if (Math.abs(move.dx) < 1 && Math.abs(move.dy) < 1 && Math.abs(move.scale - 1) < 0.02) return;
+  if (Math.abs(move.dx) < SNAP_PX && Math.abs(move.dy) < SNAP_PX && Math.abs(move.scale - 1) < 0.02) return;
   const id = element.dataset.id as string;
   const { wrapper, inner } = flipper(faceClone(element), to);
   if (!faceDown) inner.classList.add('shown');

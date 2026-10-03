@@ -2207,7 +2207,7 @@ body {
   .felt,
   .felt.seats-2 {
     grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
-    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 64px minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
       'left top right center'
       'theirs theirs theirs theirs'
@@ -2300,6 +2300,20 @@ body {
 
   .center .card.empty {
     font-size: 0.5rem;
+  }
+
+  .center .pile > .card.empty {
+    margin: 0 0 3px 3px;
+  }
+
+  .felt > .seat,
+  .felt > .center {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .seat-count.lost {
+    font-size: 0.8rem;
   }
 
   .center {
