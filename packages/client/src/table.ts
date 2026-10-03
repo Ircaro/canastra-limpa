@@ -313,7 +313,7 @@ export function createTable(controller: TableController, options: TableOptions):
 
   function seatElement(view: PlayerView, seat: number, position: string): HTMLElement {
     const team = teamOf(seat);
-    const count = view.handCounts[seat];
+    const count = seatHold.get(seat) ?? view.handCounts[seat];
     const shown = revealing(view) ? view.revealed?.[seat] ?? null : null;
     const backs = shown
       ? revealedCards(shown)
@@ -445,7 +445,7 @@ export function createTable(controller: TableController, options: TableOptions):
     const discarding = playing(view) && selection.size === 1;
     const monte = pile('Monte', view.monteCount === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack', cardBack(), cardBack()), plural(view.monteCount, 'carta', 'cartas'), () => clickMonte(controller.view()), drawing);
     const closed = view.rules.lixo === 'fechado';
-    const visible = closed ? view.lixo.slice(-1) : view.lixo;
+    const visible = closed ? view.lixo.slice(-2) : view.lixo;
     const lixoCards = visible.map((card) => cardElement(card));
     const expanded = lixoOpen && !closed;
     const lixoContent =
@@ -588,6 +588,7 @@ export function createTable(controller: TableController, options: TableOptions):
   let eventsBusyUntil = 0;
   let mortoArrivingUntil = 0;
   let mortoBlockUntil = 0;
+  const seatHold = new Map<number, number>();
   let blockReason = 'Aguarde o morto chegar.';
   let popHand = false;
 
@@ -613,7 +614,8 @@ export function createTable(controller: TableController, options: TableOptions):
       const cards = [...root.querySelectorAll<HTMLElement>('.hand .card')].map((card) => card.getBoundingClientRect());
       if (cards.length > 0) return cards;
     }
-    const area = anchorRect(target);
+    const own = anchorRect(target);
+    const area = own && own.width >= 12 ? own : anchorRect(target.replace('hand-', 'seat-')) ?? own;
     if (!area) return [];
     const sample = root.querySelector<HTMLElement>(`[data-anchor="${target}"] .card`)?.getBoundingClientRect();
     const width = sample && sample.width > 0 ? sample.width : Math.min(area.width, 40);
@@ -760,6 +762,14 @@ export function createTable(controller: TableController, options: TableOptions):
     return seat === me ? 'Você' : controller.names[seat];
   }
 
+  function holdMortoSeats(view: PlayerView): void {
+    const fresh = view.actions - lastActions;
+    if (lastActions < 0 || !mounted || fresh <= 0) return;
+    for (const entry of view.log.slice(-Math.min(fresh, view.log.length))) {
+      if (entry.type === 'morto' && entry.seat !== me) seatHold.set(entry.seat, 0);
+    }
+  }
+
   function playEvents(view: PlayerView): void {
     const previous = lastActions;
     lastActions = view.actions;
@@ -780,7 +790,11 @@ export function createTable(controller: TableController, options: TableOptions):
             render(false);
           });
         } else {
-          mortoFlight(label, `hand-${entry.seat}`, 'morto');
+          const seat = entry.seat;
+          mortoFlight(label, `hand-${seat}`, 'morto', () => {
+            seatHold.delete(seat);
+            render(false);
+          });
         }
         mortoBlockUntil = eventsBusyUntil;
         blockReason = 'Aguarde o morto chegar.';
@@ -1290,6 +1304,7 @@ export function createTable(controller: TableController, options: TableOptions):
     if (disposed || drag) return;
     const view = controller.view();
     trackPicked(view);
+    holdMortoSeats(view);
     const valid = new Set(view.hand.map((card) => card.id));
     for (const id of [...selection]) if (!valid.has(id)) selection.delete(id);
     if (view.phase !== 'comprar') choosingMeld = false;

@@ -1650,6 +1650,7 @@ body {
   position: relative;
   width: var(--card-w);
   aspect-ratio: 5 / 7;
+  margin: 0 0 6px 6px;
 }
 
 .lixo-cards {
@@ -1662,9 +1663,6 @@ body {
   grid-area: 1 / 1;
 }
 
-.lixo-wrap.piled {
-  margin: 0 0 6px 6px;
-}
 
 .lixo-wrap.piled .lixo-cards .card {
   box-shadow:
