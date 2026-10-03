@@ -68,7 +68,7 @@ function sections(rules: RuleSet): Section[] {
         rules.mortos === 'dois'
           ? 'Os dois mortos: depois de pegar o primeiro, se a dupla tiver canastra limpa e ficar sem cartas de novo, pega o segundo morto (se ainda estiver na mesa). Na vez seguinte em que ficar sem cartas, bate.'
           : 'Só um morto por dupla: depois de pegar o morto, a próxima vez que a dupla ficar sem cartas é a batida.',
-        'Sempre que o monte acabar e ainda houver morto na mesa, esse morto vira o novo monte.',
+        'Assim que alguém compra a última carta do monte, um morto que ainda estiver na mesa vira o novo monte na hora. Quem comprou já não pode mais pegar esse morto.',
       ],
     },
     {

@@ -15,6 +15,25 @@ function table(rules: Partial<RuleSet> = {}, seats = 2): GameState {
   return state;
 }
 
+describe('fim do monte', () => {
+  it('ao comprar a última carta do monte, um morto vira monte na hora e não pode mais ser pego', () => {
+    const state = table();
+    const last = card(9, 'espadas');
+    state.monte = [last];
+    const meld = run(3, 5, 'paus');
+    state.hands[0] = [...meld];
+    expect(state.mortos).toHaveLength(2);
+    expect(applyAction(state, 0, { type: 'comprar' }).ok).toBe(true);
+    expect(state.mortos).toHaveLength(1);
+    expect(state.monte).toHaveLength(11);
+    expect(state.log.some((entry) => entry.type === 'monteVazio')).toBe(true);
+    expect(applyAction(state, 0, { type: 'baixar', cards: meld.map((item) => item.id) }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'descartar', card: last.id }).ok).toBe(true);
+    expect(state.mortoTaken[0]).toBe(true);
+    expect(state.mortos).toHaveLength(0);
+  });
+});
+
 describe('lixo de uma carta', () => {
   it('com uma carta só na mão, não troca pela única carta do lixo', () => {
     const state = table();

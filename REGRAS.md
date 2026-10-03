@@ -87,7 +87,7 @@ Vale para o jogo que usa o 2 do mesmo naipe como coringa e, depois, é completad
 
 ## Fim do monte
 
-- Sempre que a vez passa e o monte está vazio, um morto que ainda está na mesa vira o novo monte. Se esse monte acabar de novo e ainda houver outro morto, ele também vira monte.
+- Assim que alguém compra a última carta do monte, um morto que ainda está na mesa vira o novo monte na hora. Quem comprou já não pode mais pegar esse morto, nem se ficar sem cartas nessa mesma vez. Se esse monte acabar de novo e ainda houver outro morto, ele também vira monte.
 - Morto que virou monte não pode mais ser pego.
 - **Só pode bater quem pegou o morto.** Se a dupla não pegou e não sobrou morto na mesa, ela não bate mais nesta mão: guarda pelo menos 1 carta até o monte acabar.
 - Se não sobrar morto nenhum, a mão termina sem batida.

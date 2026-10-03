@@ -325,6 +325,13 @@ export function applyAction(state: GameState, seat: number, action: Action): Act
     hand.push(card);
     state.phase = 'jogar';
     record(state, { seat, type: 'comprar' });
+    if (state.monte.length === 0) {
+      const morto = state.mortos.pop();
+      if (morto) {
+        state.monte = morto;
+        record(state, { seat: null, type: 'monteVazio' });
+      }
+    }
     return { ok: true };
   }
 
