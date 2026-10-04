@@ -652,15 +652,11 @@ export function createTable(controller: TableController, options: TableOptions):
       const stack = el(
         'div',
         'morto-stack',
-        ...Array.from({ length: 5 }, (_, i) => {
-          const back = cardBack();
-          back.style.setProperty('--k', String(i));
-          if (i === 4) back.append(el('div', 'morto-shine'));
-          return back;
-        }),
+        cardBack(),
       );
       const glow = el('div', 'morto-glow');
       const caption = el('div', 'event-caption', label);
+      stack.firstElementChild?.append(el('div', 'morto-shine'));
       const layer = el('div', 'morto-fly', glow, stack, caption);
       document.body.append(layer);
       const at = (point: { x: number; y: number }, scale: number) => `translate(${point.x}px, ${point.y}px) translate(-50%, -50%) scale(${scale})`;
