@@ -69,6 +69,7 @@ const MIN_VISIBLE = 0.5;
 const LONG_MELD = 4;
 const SHORT_PX = 520;
 const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
+const phoneQuery = window.matchMedia('(max-width: 760px) and (orientation: portrait)');
 const CENTER_PHASE_MS = 1150;
 const SPREAD_CARD_MS = 480;
 const SPREAD_STAGGER_MS = 42;
@@ -292,7 +293,8 @@ export function createTable(controller: TableController, options: TableOptions):
     const name = el('span', 'seat-name', controller.names[seat]);
     const tags = el('span', 'seat-tags', controller.bots[seat] ? el('span', 'tag', 'bot') : null, team === myTeam ? el('span', 'tag team-us', 'parceiro') : null);
     const countLabel = shown ? el('span', 'seat-count lost', lost > 0 ? `-${lost} pontos` : 'sem cartas') : el('span', 'seat-count', plural(count, 'carta', 'cartas'));
-    const element = el('div', `seat seat-${position} team-${team === myTeam ? 'us' : 'them'}${shown ? ' revealing' : ''}`, el('div', 'seat-head', name, tags), backs, countLabel);
+    const avatar = el('span', 'avatar', el('span', 'avatar-initial', (controller.names[seat] || '?').slice(0, 1).toUpperCase()), el('span', 'avatar-count', shown ? (lost > 0 ? `-${lost}` : '0') : String(count)));
+    const element = el('div', `seat seat-${position} team-${team === myTeam ? 'us' : 'them'}${shown ? ' revealing' : ''}`, avatar, el('div', 'seat-head', name, tags), backs, countLabel);
     const active = view.turn === seat && (view.phase === 'comprar' || view.phase === 'jogar');
     if (active) element.classList.add('active');
     if (controller.turnTimer !== undefined) element.append(active && controller.turnTimer ? timerBar(controller.turnTimer) : el('div', 'turn-bar idle'));
@@ -405,8 +407,8 @@ export function createTable(controller: TableController, options: TableOptions):
     return zone;
   }
 
-  function pile(label: string, content: HTMLElement, count: string, onClick: (() => void) | null, active: boolean): HTMLElement {
-    const element = el('div', `pile${active ? ' target' : ''}`, content, el('span', 'pile-label', label), el('span', 'pile-count', count));
+  function pile(label: string, content: HTMLElement, count: string, onClick: (() => void) | null, active: boolean, amount = 0): HTMLElement {
+    const element = el('div', `pile${active ? ' target' : ''}`, content, el('span', 'pile-label', label), el('span', 'pile-count', count), amount > 0 ? el('span', 'pile-badge', String(amount)) : null);
     element.dataset.anchor = label.toLowerCase();
     if (label === 'Lixo') element.dataset.drop = 'lixo';
     if (onClick) {
@@ -423,7 +425,7 @@ export function createTable(controller: TableController, options: TableOptions):
   function centerElement(view: PlayerView): HTMLElement {
     const drawing = myTurn(view) && view.phase === 'comprar';
     const discarding = playing(view) && selection.size === 1;
-    const monte = pile('Monte', view.monteCount === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack', cardBack()), plural(view.monteCount, 'carta', 'cartas'), () => clickMonte(controller.view()), drawing);
+    const monte = pile('Monte', view.monteCount === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack', cardBack()), plural(view.monteCount, 'carta', 'cartas'), () => clickMonte(controller.view()), drawing, view.monteCount);
     const closed = view.rules.lixo === 'fechado';
     const visible = closed ? view.lixo.slice(-2) : view.lixo;
     const lixoCards = visible.map((card, index) => cardElement(card, { selected: closed && choosingMeld && index === visible.length - 1 }));
@@ -432,8 +434,8 @@ export function createTable(controller: TableController, options: TableOptions):
       view.lixo.length === 0
         ? el('div', 'card empty', 'vazio')
         : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? (view.lixo.length > 2 ? ' piled' : ' piled-two') : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
-    const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen);
-    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', cardBack()), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false);
+    const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen, view.lixo.length);
+    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', cardBack()), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false, view.mortosLeft);
     return el('section', 'center', monte, lixo, mortos);
   }
 
@@ -859,6 +861,51 @@ export function createTable(controller: TableController, options: TableOptions):
       soundButton(),
       button('Regras', 'button ghost small', options.onRules),
     );
+  }
+
+  let menuOpen = false;
+
+  function hudElement(view: PlayerView): HTMLElement {
+    const toggleMenu = button('☰', `button ghost hud-menu${menuOpen ? ' open' : ''}`, () => {
+      menuOpen = !menuOpen;
+      sound.play(menuOpen ? 'select' : 'deselect');
+      render(false);
+    });
+    toggleMenu.setAttribute('aria-label', 'Opções');
+    toggleMenu.setAttribute('aria-expanded', String(menuOpen));
+    const pick = (action: () => void) => () => {
+      menuOpen = false;
+      action();
+      render(false);
+    };
+    const panel = menuOpen
+      ? el(
+          'div',
+          'hud-panel',
+          button('Menu', 'button ghost small', pick(options.onMenu)),
+          button('Regras', 'button ghost small', pick(options.onRules)),
+          soundButton(),
+          controller.sandbox ? button('Voltar jogada', 'button ghost small', () => controller.sandbox?.undo(), !controller.sandbox.canUndo()) : null,
+          controller.sandbox ? button(paletteOpen ? 'Fechar cartas' : 'Cartas', 'button ghost small', pick(togglePalette)) : null,
+        )
+      : null;
+    const total = (team: number) => view.scores[team] + (view.phase === 'comprar' || view.phase === 'jogar' ? tablePoints(view.melds, team) : 0);
+    const board = el(
+      'button',
+      'hud-score',
+      el('span', 'us', el('small', '', 'nós'), el('b', '', String(total(myTeam)))),
+      el('span', 'them', el('small', '', 'eles'), el('b', '', String(total(1 - myTeam)))),
+    );
+    board.type = 'button';
+    board.setAttribute('aria-label', 'Ver o placar e os pontos');
+    board.addEventListener('click', () => {
+      detailsOpen = !detailsOpen;
+      render(false);
+    });
+    const details = detailsOpen
+      ? el('div', 'details-panel hud-details', el('p', 'details-meta', view.rules.meta === 0 ? metaLabel(0) : `Mão ${view.handNumber} · meta ${view.rules.meta}`), breakdown(view, myTeam), breakdown(view, 1 - myTeam))
+      : null;
+    return el('div', 'hud', toggleMenu, panel, board, details, controller.latency !== undefined ? pingBadge(() => controller.latency) : null);
   }
 
   let paletteOpen = controller.sandbox !== undefined;
@@ -1290,7 +1337,9 @@ export function createTable(controller: TableController, options: TableOptions):
     const positions = view.seats === 4 ? ['bottom', 'left', 'top', 'right'] : ['bottom', 'top'];
     const others = Array.from({ length: view.seats }, (_, i) => i).filter((seat) => seat !== me);
     const seatElements = others.map((seat) => seatElement(view, seat, positions[(seat - me + view.seats) % view.seats]));
-    const felt = el('div', `felt seats-${view.seats}`, ...seatElements, meldZone(view, 1 - myTeam), centerElement(view), meldZone(view, myTeam));
+    const phone = phoneQuery.matches;
+    root.classList.toggle('phone', phone);
+    const felt = el('div', `felt seats-${view.seats}`, ...seatElements, meldZone(view, 1 - myTeam), centerElement(view), meldZone(view, myTeam), phone ? hudElement(view) : null);
     if (view.lixo.length === 0) lixoOpen = false;
     const dock = el(
       'div',
@@ -1312,7 +1361,7 @@ export function createTable(controller: TableController, options: TableOptions):
     const modal = endModal(view);
     if (!modal) shownModal = '';
     const scrolls = SCROLL_KEEP.map((selector) => root.querySelector<HTMLElement>(selector)?.scrollTop ?? 0);
-    root.replaceChildren(topBar(view), felt, dock, palette ?? '', toastElement ?? '', modal ?? '');
+    root.replaceChildren(phone ? '' : topBar(view), felt, dock, palette ?? '', toastElement ?? '', modal ?? '');
     SCROLL_KEEP.forEach((selector, index) => {
       const element = root.querySelector<HTMLElement>(selector);
       if (element && scrolls[index]) element.scrollTop = scrolls[index];
@@ -1339,6 +1388,8 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   document.addEventListener('keydown', onKey);
+  const onPhoneChange = () => render(false);
+  phoneQuery.addEventListener('change', onPhoneChange);
   const observer = new ResizeObserver(() => {
     fitHand();
     fitMelds();
@@ -1362,6 +1413,7 @@ export function createTable(controller: TableController, options: TableOptions):
       stopAnimations();
       endDrag();
       document.removeEventListener('keydown', onKey);
+      phoneQuery.removeEventListener('change', onPhoneChange);
       observer.disconnect();
       if (toastTimer) clearTimeout(toastTimer);
       controller.dispose();
