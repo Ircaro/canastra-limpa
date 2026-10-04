@@ -435,7 +435,7 @@ export function createTable(controller: TableController, options: TableOptions):
         ? el('div', 'card empty', 'vazio')
         : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? (view.lixo.length > 2 ? ' piled' : ' piled-two') : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
     const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen, view.lixo.length);
-    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', cardBack(), ...(view.mortosLeft > 1 ? [cardBack('crossed')] : [])), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false, view.mortosLeft);
+    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', cardBack(), ...(view.mortosLeft > 1 ? [cardBack()] : [])), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false, view.mortosLeft);
     return el('section', 'center', monte, lixo, mortos);
   }
 
@@ -1251,7 +1251,7 @@ export function createTable(controller: TableController, options: TableOptions):
     if (!hand) return;
     const cards = hand.querySelectorAll<HTMLElement>('.card');
     if (cards.length < 2) return;
-    const width = cards[0].getBoundingClientRect().width;
+    const width = cards[0].offsetWidth;
     const available = hand.clientWidth - 8;
     const overlap = Math.min(6, (available - width * cards.length) / (cards.length - 1));
     const rows = window.innerWidth <= NARROW_PX && cards.length > 8 && width + overlap < width * MIN_VISIBLE;
