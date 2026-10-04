@@ -13,7 +13,7 @@
   --them: #ff8a7a;
   --red: #c8283c;
   --black: #1d2230;
-  --card-w: clamp(46px, min(5.4vw, 8.6vh), 92px);
+  --card-w: clamp(46px, min(5.4vw, 6.6vh), 92px);
   --meld-w: calc(var(--card-w) * 0.9);
   --pile-w: var(--card-w);
   --font: 'Fredoka Variable', 'Fredoka', 'Segoe UI', system-ui, sans-serif;
@@ -358,7 +358,7 @@ body {
     radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0 15%, rgba(255, 236, 200, 0.55) 15.5% 17%, rgba(0, 0, 0, 0) 17.5%),
     repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.13) 0 1.5px, transparent 1.5px 6px),
     repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.13) 0 1.5px, transparent 1.5px 6px),
-    linear-gradient(155deg, #c73545, #8a1828);
+    linear-gradient(155deg, #3a8ae0, #1b56a3);
   border: calc(var(--card-w) * 0.06) solid #ffffff;
   box-shadow:
     inset 0 0 0 calc(var(--card-w) * 0.035) rgba(255, 236, 200, 0.6),
@@ -702,7 +702,7 @@ body {
 }
 
 .melds.compact .meld.long .meld-cards .card.squeeze {
-  margin-left: calc(var(--card-w) * -0.8);
+  margin-left: calc(var(--card-w) * -0.84);
 }
 
 .meld.canastra .meld-cards .card + .card {
@@ -2084,7 +2084,7 @@ body {
 
 @media (max-width: 760px) {
   :root {
-    --card-w: 50px;
+    --card-w: 44px;
     --meld-w: 44px;
   }
 
@@ -2633,4 +2633,16 @@ body {
 
 .float-points.big.lixo-taken {
   font-size: 1.15rem;
+}
+
+html {
+  touch-action: manipulation;
+}
+
+.stack.mortos .card.crossed {
+  rotate: 90deg;
+}
+
+.melds {
+  --meld-w: calc(var(--card-w) * var(--meld-scale, 1));
 }
