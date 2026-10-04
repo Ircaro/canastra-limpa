@@ -905,6 +905,10 @@ export function createTable(controller: TableController, options: TableOptions):
     const details = detailsOpen
       ? el('div', 'details-panel hud-details', el('p', 'details-meta', view.rules.meta === 0 ? metaLabel(0) : `Mão ${view.handNumber} · meta ${view.rules.meta}`), breakdown(view, myTeam), breakdown(view, 1 - myTeam))
       : null;
+    details?.addEventListener('click', () => {
+      detailsOpen = false;
+      render(false);
+    });
     return el('div', 'hud', toggleMenu, panel, board, details, controller.latency !== undefined ? pingBadge(() => controller.latency) : null);
   }
 
