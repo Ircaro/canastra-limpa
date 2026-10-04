@@ -15,7 +15,7 @@
   --black: #1d2230;
   --card-w: clamp(46px, min(5.4vw, 8.6vh), 92px);
   --meld-w: calc(var(--card-w) * 0.9);
-  --pile-w: calc(var(--card-w) * 0.8);
+  --pile-w: var(--card-w);
   --font: 'Fredoka Variable', 'Fredoka', 'Segoe UI', system-ui, sans-serif;
   color-scheme: dark;
 }
@@ -354,11 +354,16 @@ body {
 
 .card.back {
   background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2) 0 1.5px, transparent 1.5px 8px),
-    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.2) 0 1.5px, transparent 1.5px 8px),
-    linear-gradient(160deg, #3a8ae0, #1f5fae);
+    radial-gradient(circle at 50% 50%, rgba(255, 236, 200, 0.95) 0 6%, rgba(255, 236, 200, 0) 6.5%),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 0 15%, rgba(255, 236, 200, 0.55) 15.5% 17%, rgba(0, 0, 0, 0) 17.5%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.13) 0 1.5px, transparent 1.5px 6px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.13) 0 1.5px, transparent 1.5px 6px),
+    linear-gradient(155deg, #c73545, #8a1828);
   border: calc(var(--card-w) * 0.06) solid #ffffff;
-  box-shadow: 0 0 0 1px #b9c0c7, 0 1px 3px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    inset 0 0 0 calc(var(--card-w) * 0.035) rgba(255, 236, 200, 0.6),
+    0 0 0 1px #b9c0c7,
+    0 1px 3px rgba(0, 0, 0, 0.28);
 }
 
 .card.empty {
@@ -1653,6 +1658,11 @@ body {
   grid-area: 1 / 1;
 }
 
+.stack.mortos .card.crossed {
+  rotate: 90deg;
+  scale: 0.92;
+}
+
 .stack .card:nth-child(2) {
   transform: translate(3px, -3px);
 }
@@ -2201,13 +2211,12 @@ body {
   }
 
   :root {
-    --pile-w: 26px;
   }
 
   .felt,
   .felt.seats-2 {
     grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
-    grid-template-rows: 64px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 100px minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
       'left top right center'
       'theirs theirs theirs theirs'
@@ -2286,11 +2295,10 @@ body {
     justify-content: center;
     width: min(92vw, 420px);
     row-gap: 6px;
-    --card-w: 48px;
   }
 
   .center .pile {
-    width: 50px;
+    width: calc(var(--card-w) + 8px);
   }
 
   .center .pile-label,
@@ -2488,7 +2496,6 @@ body {
   :root {
     --card-w: 40px;
     --meld-w: 34px;
-    --pile-w: 28px;
   }
 
   .table {
@@ -2610,10 +2617,6 @@ body {
 
   .dock {
     padding: 4px 8px;
-  }
-
-  .lixo-cards.open {
-    --card-w: 40px;
   }
 
   .hand {
