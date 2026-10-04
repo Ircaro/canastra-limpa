@@ -2708,12 +2708,12 @@ body {
 
 .table.phone .seat-left {
   left: 3px;
-  top: 40%;
+  top: 30%;
 }
 
 .table.phone .seat-right {
   right: 3px;
-  top: 40%;
+  top: 30%;
 }
 
 .table.phone .felt.seats-2 .seat-top {
@@ -2809,30 +2809,55 @@ body {
 
 .table.phone .seat .backs {
   display: flex !important;
-  position: absolute;
-  z-index: -1;
+  justify-content: center;
   pointer-events: none;
-  --card-w: 28px;
+  --card-w: 18px;
 }
 
 .table.phone .seat-left .backs,
 .table.phone .seat-right .backs {
-  top: 60px;
   flex-direction: column;
+  align-items: center;
+  margin-top: 4px;
 }
 
-.table.phone .seat-left .backs {
-  left: -14px;
+.table.phone .seat-left .backs .card,
+.table.phone .seat-right .backs .card {
+  width: calc(var(--card-w) * 1.4);
+  aspect-ratio: 7 / 5;
 }
 
-.table.phone .seat-right .backs {
-  right: -14px;
+.table.phone .seat-left .backs .card + .card,
+.table.phone .seat-right .backs .card + .card {
+  margin-left: 0;
+  margin-top: calc(var(--card-w) * -0.62);
+}
+
+.table.phone .seat-top {
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    'avatar backs'
+    'name backs';
+  width: auto;
+  column-gap: 8px;
+  align-items: center;
+}
+
+.table.phone .seat-top .avatar {
+  grid-area: avatar;
+}
+
+.table.phone .seat-top .seat-head {
+  grid-area: name;
 }
 
 .table.phone .seat-top .backs {
-  top: -26px;
-  left: 50%;
-  translate: -50% 0;
+  grid-area: backs;
+  flex-direction: row;
+}
+
+.table.phone .seat-top .backs .card + .card {
+  margin-left: calc(var(--card-w) * -0.68);
 }
 
 .table.phone .seat .turn-bar {
