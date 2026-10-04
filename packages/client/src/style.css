@@ -1148,14 +1148,13 @@ body {
 
 .morto-stack {
   position: relative;
-  width: calc(var(--card-w) + 8px);
-  height: calc(var(--card-w) * 1.4 + 8px);
+  width: var(--card-w);
+  height: calc(var(--card-w) * 1.4);
 }
 
 .morto-stack .card {
   position: absolute;
-  left: calc(var(--k) * 2px);
-  top: calc(8px - var(--k) * 2px);
+  inset: 0;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
 }
 
@@ -3041,8 +3040,23 @@ html {
 
 .stack.mortos .card.crossed {
   rotate: 90deg;
+  transform: none;
+}
+
+.stack.mortos {
+  padding-inline: calc(var(--card-w) * 0.2);
 }
 
 .melds {
   --meld-w: calc(var(--card-w) * var(--meld-scale, 1));
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 760px) {
+  .center .pile[data-anchor='mortos'] {
+    width: calc(var(--card-w) * 1.4 + 8px);
+  }
 }
