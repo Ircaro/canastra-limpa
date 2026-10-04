@@ -1,4 +1,4 @@
-import { lixoPause, isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
+import { isVulnerable, needsOpening, openingPoints, metaLabel, CANASTRA_BONUS, CANASTRA_SIZE, arrangeSequence, canastraKind, cardPoints, extendMeld, isWild, type CanastraKind, tablePoints, teamOf, type Action, type Card, type HandResult, type LastAction, type Meld, type PlayerView, type Suit } from '@canastra/shared';
 import { play, snapshot, stopAnimations } from './animate';
 import { SUIT_ORDER, cardBack, cardElement, sortHand, type SortMode } from './cards';
 import { button, el } from './dom';
@@ -67,7 +67,6 @@ const EVENT_MS = 2100;
 const NARROW_PX = 760;
 const MIN_VISIBLE = 0.5;
 const LONG_MELD = 4;
-const SHORT_PX = 520;
 const SCROLL_KEEP = ['.felt', '.melds.theirs', '.melds.ours'];
 const phoneQuery = window.matchMedia('(max-width: 760px) and (orientation: portrait)');
 const CENTER_PHASE_MS = 1150;
@@ -435,7 +434,7 @@ export function createTable(controller: TableController, options: TableOptions):
         ? el('div', 'card empty', 'vazio')
         : el('div', `lixo-wrap${!expanded && view.lixo.length > 1 ? (view.lixo.length > 2 ? ' piled' : ' piled-two') : ''}`, el('div', `lixo-cards${expanded ? ' open' : ''}`, ...lixoCards));
     const lixo = pile('Lixo', lixoContent, plural(view.lixo.length, 'carta', 'cartas'), () => clickLixo(controller.view()), (drawing && view.lixo.length > 0) || discarding || lixoOpen, view.lixo.length);
-    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', cardBack(), ...(view.mortosLeft > 1 ? [cardBack()] : [])), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false, view.mortosLeft);
+    const mortos = pile('Mortos', view.mortosLeft === 0 ? el('div', 'card empty', 'vazio') : el('div', 'stack mortos', cardBack(), ...(view.mortosLeft > 1 ? [cardBack('crossed')] : [])), view.mortosLeft === 0 ? 'nenhum' : `${view.mortosLeft} na mesa`, null, false, view.mortosLeft);
     return el('section', 'center', monte, lixo, mortos);
   }
 
@@ -787,14 +786,9 @@ export function createTable(controller: TableController, options: TableOptions):
           blockReason = 'Aguarde o morto virar monte.';
         }
         else banner('O monte acabou', 'Mão encerrada sem batida', 'neutral');
-      } else if (entry.type === 'pegarLixo' && view.rules.lixo === 'fechado') {
-        if (entry.seat === me) {
-          mortoBlockUntil = Math.max(mortoBlockUntil, performance.now() + lixoPause(entry.count));
-          blockReason = '';
-        } else {
-          const pile = root.querySelector<HTMLElement>('[data-anchor="lixo"]');
-          if (pile) floatText(pile, `${controller.names[entry.seat]} pegou o lixo`, `big lixo-taken ${teamOf(entry.seat) === myTeam ? 'us' : 'them'}`, 80);
-        }
+      } else if (entry.type === 'pegarLixo' && view.rules.lixo === 'fechado' && entry.seat !== me) {
+        const pile = root.querySelector<HTMLElement>('[data-anchor="lixo"]');
+        if (pile) floatText(pile, `${controller.names[entry.seat]} pegou o lixo`, `big lixo-taken ${teamOf(entry.seat) === myTeam ? 'us' : 'them'}`, 80);
       } else if (entry.type === 'bater') {
         const team = teamOf(entry.seat);
         const title = entry.seat === me ? 'Você bateu!' : `${controller.names[entry.seat]} bateu!`;
@@ -1234,7 +1228,7 @@ export function createTable(controller: TableController, options: TableOptions):
   }
 
   function fitMelds(): void {
-    const floor = window.innerHeight <= SHORT_PX ? 0.42 : 1;
+    const floor = 1;
     for (const zone of root.querySelectorAll<HTMLElement>('.melds')) {
       let scale = 1;
       zone.style.setProperty('--meld-scale', '1');
