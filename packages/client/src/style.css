@@ -2769,9 +2769,27 @@ body {
 }
 
 .table.phone .seat.active .avatar {
-  box-shadow:
-    0 0 0 3px #34d399,
-    0 0 14px rgba(52, 211, 153, 0.8);
+  box-shadow: 0 0 0 3px #34d399;
+}
+
+.table.phone .seat.active .avatar::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(52, 211, 153, 0.7);
+  animation: turn-ring 1.4s ease-out infinite;
+}
+
+@keyframes turn-ring {
+  from {
+    scale: 0.85;
+    opacity: 1;
+  }
+  to {
+    scale: 1.25;
+    opacity: 0;
+  }
 }
 
 .table.phone .seat-head {
@@ -2789,10 +2807,37 @@ body {
 }
 
 .table.phone .seat-tags,
-.table.phone .seat .backs,
 .table.phone .seat .revealed,
 .table.phone .seat-count {
   display: none !important;
+}
+
+.table.phone .seat .backs {
+  display: flex !important;
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  --card-w: 28px;
+}
+
+.table.phone .seat-left .backs,
+.table.phone .seat-right .backs {
+  top: 60px;
+  flex-direction: column;
+}
+
+.table.phone .seat-left .backs {
+  left: -14px;
+}
+
+.table.phone .seat-right .backs {
+  right: -14px;
+}
+
+.table.phone .seat-top .backs {
+  top: -26px;
+  left: 50%;
+  translate: -50% 0;
 }
 
 .table.phone .seat .turn-bar {
