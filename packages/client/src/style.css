@@ -2658,7 +2658,7 @@ body {
     'theirs'
     'ours';
   gap: 0;
-  padding: 58px 58px 6px;
+  padding: 66px 58px 6px;
   border: 0;
   border-radius: 0;
   background: none;
@@ -2689,6 +2689,7 @@ body {
 .table.phone .seat {
   position: absolute;
   z-index: 4;
+  overflow: visible;
   display: grid;
   justify-items: center;
   gap: 2px;
@@ -2700,7 +2701,7 @@ body {
 }
 
 .table.phone .seat-top {
-  top: 4px;
+  top: 12px;
   left: 50%;
   translate: -50% 0;
 }
@@ -2716,7 +2717,7 @@ body {
 }
 
 .table.phone .felt.seats-2 .seat-top {
-  top: 4px;
+  top: 12px;
 }
 
 .table.phone .avatar {
@@ -2869,6 +2870,7 @@ body {
   inset: 0;
   z-index: 3;
   display: block;
+  overflow: visible;
   padding: 0;
   background: none;
   pointer-events: none;
@@ -2902,6 +2904,7 @@ body {
 .table.phone .pile[data-anchor='mortos'] {
   right: 6px;
   bottom: 8px;
+  width: auto;
 }
 
 .table.phone .pile.target {
