@@ -1658,11 +1658,6 @@ body {
   grid-area: 1 / 1;
 }
 
-.stack.mortos .card.crossed {
-  rotate: 90deg;
-  scale: 0.92;
-}
-
 .stack .card:nth-child(2) {
   transform: translate(3px, -3px);
 }
